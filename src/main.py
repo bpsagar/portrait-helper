@@ -1,6 +1,3 @@
-'''
-Created by ChatGPT: https://chatgpt.com/c/758da791-3241-4e4b-b955-c7c589b1f498
-'''
 import argparse
 from PIL import Image
 import numpy as np
@@ -12,7 +9,13 @@ def round_to_nearest_gray(array, gray_levels):
     for i in range(len(gray_levels)):
         lower_bound = gray_levels[i] - (gray_levels[1] - gray_levels[0]) / 2
         upper_bound = gray_levels[i] + (gray_levels[1] - gray_levels[0]) / 2
-        rounded_array[(array > lower_bound) & (array <= upper_bound)] = gray_levels[i]
+        if i == 0:
+            mask = (array <= gray_levels[i])
+        elif i == len(gray_levels) - 1:
+            mask = (array > gray_levels[i-1])
+        else:
+            mask = (array > gray_levels[i-1]) & (array <= gray_levels[i])
+        rounded_array[mask] = gray_levels[i]
     return rounded_array
 
 def process_image(input_path, output_folder, num_levels, contrast_level):
@@ -37,14 +40,19 @@ def process_image(input_path, output_folder, num_levels, contrast_level):
 
     # Process each gray level
     for i, level in enumerate(gray_levels):
+        # Create a mask where the pixels are less than or equal to the current gray level
         mask = rounded_img_array <= level
+
+        # Create a new image array with all pixels set to white (1.0)
         new_img_array = np.ones_like(rounded_img_array)  # Initialize with white (1.0)
+
+        # Set the mask pixels to the corresponding gray level
         new_img_array[mask] = rounded_img_array[mask]
 
         # Convert the array back to an image
         new_image = Image.fromarray((new_img_array * 255).astype(np.uint8))
 
-        # Save the image
+        # Save the filled image
         output_path = os.path.join(output_folder, f'image_{i+1}.png')
         new_image.save(output_path)
 

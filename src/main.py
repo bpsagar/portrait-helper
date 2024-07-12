@@ -1,11 +1,11 @@
 '''
 Created by ChatGPT: https://chatgpt.com/c/758da791-3241-4e4b-b955-c7c589b1f498
-Usage: python src/main.py image.jpg dist
 '''
 import argparse
 from PIL import Image
 import numpy as np
 import os
+from contrast_adjustment import adjust_contrast
 
 def round_to_nearest_gray(array, gray_levels):
     rounded_array = np.zeros_like(array)
@@ -15,9 +15,13 @@ def round_to_nearest_gray(array, gray_levels):
         rounded_array[(array > lower_bound) & (array <= upper_bound)] = gray_levels[i]
     return rounded_array
 
-def process_image(input_path, output_folder, num_levels):
+def process_image(input_path, output_folder, num_levels, contrast_level):
     # Load image
     image = Image.open(input_path).convert('L')  # Convert to grayscale
+
+    # Optionally adjust contrast
+    if contrast_level is not None:
+        image = adjust_contrast(image, contrast_level)
 
     # Convert image to numpy array
     img_array = np.array(image, dtype=float) / 255.0  # Normalize pixel values to range 0 to 1
@@ -49,7 +53,8 @@ if __name__ == "__main__":
     parser.add_argument("input_path", type=str, help="Path to the input image.")
     parser.add_argument("output_folder", type=str, help="Folder to save the output images.")
     parser.add_argument("num_levels", type=int, help="Number of gray levels.")
+    parser.add_argument("--contrast_level", type=float, help="Contrast level to apply to the image.", default=None)
 
     args = parser.parse_args()
 
-    process_image(args.input_path, args.output_folder, args.num_levels)
+    process_image(args.input_path, args.output_folder, args.num_levels, args.contrast_level)

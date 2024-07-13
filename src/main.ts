@@ -1,4 +1,10 @@
-import { adjustContrast, filterDarkerGrays, roundToNearestGray } from './utils';
+import {
+  addGridToImage,
+  adjustContrast,
+  filterDarkerGrays,
+  generateGrid,
+  roundToNearestGray,
+} from './utils';
 
 const processImage = (
   inputId: string,
@@ -6,6 +12,8 @@ const processImage = (
   numLevels: number,
   contrast: number,
   maxGrayLevel: number,
+  gridSize: number,
+  gridStrokeSize: number,
 ) => {
   const input = document.getElementById(inputId) as HTMLInputElement;
   const output = document.getElementById(outputId) as HTMLImageElement;
@@ -23,10 +31,13 @@ const processImage = (
         { length: numLevels },
         (_, i) => (i * 255) / (numLevels - 1),
       );
-      console.log(grayLevels);
-      const finalImage = filterDarkerGrays(
-        adjustContrast(roundToNearestGray(imageData, grayLevels), contrast),
-        maxGrayLevel,
+      const finalImage = addGridToImage(
+        filterDarkerGrays(
+          adjustContrast(roundToNearestGray(imageData, grayLevels), contrast),
+          maxGrayLevel,
+        ),
+        gridSize,
+        gridStrokeSize,
       );
       ctx.putImageData(finalImage, 0, 0);
       output.src = canvas.toDataURL();
@@ -47,12 +58,27 @@ const getValues = () => {
     ) *
       255) /
     numLevels;
-  return { contrast, numLevels, maxGrayLevel };
+  const gridSize = parseInt(
+    (document.getElementById('gridSize') as HTMLInputElement).value,
+  );
+  const gridStrokeSize = parseInt(
+    (document.getElementById('strokeSize') as HTMLInputElement).value,
+  );
+  return { contrast, numLevels, maxGrayLevel, gridSize, gridStrokeSize };
 };
 
 const onChange = () => {
-  const { contrast, numLevels, maxGrayLevel } = getValues();
-  processImage('input', 'output', numLevels, contrast, maxGrayLevel);
+  const { contrast, numLevels, maxGrayLevel, gridSize, gridStrokeSize } =
+    getValues();
+  processImage(
+    'input',
+    'output',
+    numLevels,
+    contrast,
+    maxGrayLevel,
+    gridSize,
+    gridStrokeSize,
+  );
 };
 
 const main = () => {
@@ -60,6 +86,8 @@ const main = () => {
   document.getElementById('contrast')?.addEventListener('input', onChange);
   document.getElementById('numLevels')?.addEventListener('input', onChange);
   document.getElementById('maxGrayLevel')?.addEventListener('input', onChange);
+  document.getElementById('gridSize')?.addEventListener('input', onChange);
+  document.getElementById('strokeSize')?.addEventListener('input', onChange);
 };
 
 main();

@@ -49,3 +49,32 @@ export const filterDarkerGrays = (imageDate: ImageData, grayLevel: number) => {
   }
   return imageDate;
 };
+
+export const addGridToImage = (
+  imageData: ImageData,
+  gridSize: number,
+  strokeSize: number,
+) => {
+  const data = imageData.data;
+  for (let i = 0; i < imageData.width; i += gridSize) {
+    for (let j = 0; j < imageData.height; j++) {
+      for (let k = 0; k < strokeSize; k++) {
+        const index = (i + k + j * imageData.width) * 4;
+        data[index] = 0;
+        data[index + 1] = 0;
+        data[index + 2] = 0;
+      }
+    }
+  }
+  for (let i = 0; i < imageData.width; i++) {
+    for (let j = 0; j < imageData.height; j += gridSize) {
+      for (let k = 0; k < strokeSize; k++) {
+        const index = (i + (j + k) * imageData.width) * 4;
+        data[index] = 0;
+        data[index + 1] = 0;
+        data[index + 2] = 0;
+      }
+    }
+  }
+  return imageData;
+};

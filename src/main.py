@@ -3,6 +3,7 @@ from PIL import Image
 import numpy as np
 import os
 from contrast_adjustment import adjust_contrast
+from draw_outline import draw_outline  # Corrected import statement
 
 def round_to_nearest_gray(array, gray_levels):
     rounded_array = np.zeros_like(array)
@@ -18,7 +19,7 @@ def round_to_nearest_gray(array, gray_levels):
         rounded_array[mask] = gray_levels[i]
     return rounded_array
 
-def process_image(input_path, output_folder, num_levels, contrast_level):
+def process_image(input_path, output_folder, num_levels, contrast_level, sigma):
     # Load image
     image = Image.open(input_path).convert('L')  # Convert to grayscale
 
@@ -56,13 +57,19 @@ def process_image(input_path, output_folder, num_levels, contrast_level):
         output_path = os.path.join(output_folder, f'image_{i+1}.png')
         new_image.save(output_path)
 
+        # Generate and save the outline image
+        outline_image = draw_outline(new_image, sigma)
+        outline_output_path = os.path.join(output_folder, f'image_{i+1}_outline.png')
+        outline_image.save(outline_output_path)
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process an image to create grayscale steps.")
+    parser = argparse.ArgumentParser(description="Process an image to create grayscale steps and outlines.")
     parser.add_argument("input_path", type=str, help="Path to the input image.")
     parser.add_argument("output_folder", type=str, help="Folder to save the output images.")
     parser.add_argument("num_levels", type=int, help="Number of gray levels.")
     parser.add_argument("--contrast_level", type=float, help="Contrast level to apply to the image.", default=None)
+    parser.add_argument("--sigma", type=float, help="Sigma value for Canny edge detection.", default=1.0)
 
     args = parser.parse_args()
 
-    process_image(args.input_path, args.output_folder, args.num_levels, args.contrast_level)
+    process_image(args.input_path, args.output_folder, args.num_levels, args.contrast_level, args.sigma)

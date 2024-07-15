@@ -5,14 +5,8 @@ export const roundToNearestGray = (
   var data = imageData.data;
   for (var i = 0; i < data.length; i += 4) {
     var grayscale = data[i] * 0.3 + data[i + 1] * 0.59 + data[i + 2] * 0.11;
-    var rounded =
-      grayLevels[
-        Math.round(
-          (grayscale / 255) * (grayLevels.length - 1) -
-            0.5 +
-            (grayLevels[0] - grayscale) / (grayLevels[0] - grayLevels[1]),
-        )
-      ];
+    const grayIndex = Math.round((grayscale / 255) * (grayLevels.length - 1));
+    const rounded = grayLevels[grayIndex];
     data[i] = rounded;
     data[i + 1] = rounded;
     data[i + 2] = rounded;

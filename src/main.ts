@@ -1,8 +1,9 @@
 import {
   addGridToImage,
   adjustContrast,
+  fillGridWithColor,
   filterDarkerGrays,
-  generateGrid,
+  getRemainingCells,
   roundToNearestGray,
 } from './utils';
 
@@ -32,12 +33,18 @@ const processImage = (
         (_, i) => (i * 255) / (numLevels - 1),
       );
       const finalImage = addGridToImage(
-        filterDarkerGrays(
-          adjustContrast(roundToNearestGray(imageData, grayLevels), contrast),
-          maxGrayLevel,
+        fillGridWithColor(
+          filterDarkerGrays(
+            adjustContrast(roundToNearestGray(imageData, grayLevels), contrast),
+            maxGrayLevel,
+          ),
+          255,
+          gridSize,
+          getRemainingCells(imageData, gridSize, [18, 19, 20, 24, 25, 26]),
         ),
         gridSize,
         gridStrokeSize,
+        233,
       );
       ctx.putImageData(finalImage, 0, 0);
       output.src = canvas.toDataURL();

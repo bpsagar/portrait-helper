@@ -48,25 +48,67 @@ export const addGridToImage = (
   imageData: ImageData,
   gridSize: number,
   strokeSize: number,
+  strokeColor: number = 0, // 0-255 for grayscale
 ) => {
   const data = imageData.data;
-  for (let i = 0; i < imageData.width; i += gridSize) {
+  for (let i = gridSize; i < imageData.width; i += gridSize) {
     for (let j = 0; j < imageData.height; j++) {
       for (let k = 0; k < strokeSize; k++) {
         const index = (i + k + j * imageData.width) * 4;
-        data[index] = 0;
-        data[index + 1] = 0;
-        data[index + 2] = 0;
+        data[index] = strokeColor;
+        data[index + 1] = strokeColor;
+        data[index + 2] = strokeColor;
       }
     }
   }
   for (let i = 0; i < imageData.width; i++) {
-    for (let j = 0; j < imageData.height; j += gridSize) {
+    for (let j = gridSize; j < imageData.height; j += gridSize) {
       for (let k = 0; k < strokeSize; k++) {
         const index = (i + (j + k) * imageData.width) * 4;
-        data[index] = 0;
-        data[index + 1] = 0;
-        data[index + 2] = 0;
+        data[index] = strokeColor;
+        data[index + 1] = strokeColor;
+        data[index + 2] = strokeColor;
+      }
+    }
+  }
+  return imageData;
+};
+
+export const getRemainingCells = (
+  imageSize: { width: number; height: number },
+  gridSize: number,
+  gridCells: number[],
+) => {
+  const numberOfCellsInRow = Math.round(imageSize.width / gridSize);
+  const numberOfCellsInCol = Math.round(imageSize.height / gridSize);
+  const totalCells = numberOfCellsInRow * numberOfCellsInCol;
+  const remainingCells = [];
+  for (let i = 0; i < totalCells; i++) {
+    if (gridCells.indexOf(i) === -1) {
+      remainingCells.push(i);
+    }
+  }
+  return remainingCells;
+};
+
+export const fillGridWithColor = (
+  imageData: ImageData,
+  color: number = 0, // 0-255 for grayscale
+  gridSize: number,
+  gridCells: number[], // cell numbers starting from 0
+) => {
+  const data = imageData.data;
+  const numberOfCellsInRow = Math.round(imageData.width / gridSize);
+  for (let i = 0; i < gridCells.length; i++) {
+    const cell = gridCells[i];
+    const x = (cell % numberOfCellsInRow) * gridSize;
+    const y = Math.floor(cell / numberOfCellsInRow) * gridSize;
+    for (let j = x; j < x + gridSize; j++) {
+      for (let k = y; k < y + gridSize; k++) {
+        const index = (j + k * imageData.width) * 4;
+        data[index] = color;
+        data[index + 1] = color;
+        data[index + 2] = color;
       }
     }
   }

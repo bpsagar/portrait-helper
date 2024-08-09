@@ -1,10 +1,10 @@
+import { runPipeline } from './lib';
 import {
   addGridToImage,
   adjustContrast,
-  fillGridWithColor,
   filterDarkerGrays,
-  getRemainingCells,
-  roundToNearestGray,
+  normalizeGrayShades,
+  showGridCells,
 } from './utils';
 
 const processImage = (
@@ -28,23 +28,27 @@ const processImage = (
     if (ctx) {
       ctx.drawImage(image, 0, 0);
       const imageData = ctx.getImageData(0, 0, image.width, image.height);
-      const grayLevels = Array.from(
-        { length: numLevels },
-        (_, i) => (i * 255) / (numLevels - 1),
-      );
-      const finalImage = addGridToImage(
-        fillGridWithColor(
-          filterDarkerGrays(
-            adjustContrast(roundToNearestGray(imageData, grayLevels), contrast),
-            maxGrayLevel,
-          ),
-          255,
-          gridSize,
-          getRemainingCells(imageData, gridSize, [18, 19, 20, 24, 25, 26]),
-        ),
-        gridSize,
-        gridStrokeSize,
-        233,
+      const finalImage = runPipeline(
+        imageData,
+        {
+          contrastLevel: contrast,
+          numberOfShades: numLevels,
+          grid: {
+            size: gridSize,
+            strokeSize: gridStrokeSize,
+            strokeColor: 200,
+          },
+          maxGrayShade: maxGrayLevel,
+          showGridCells: [12, 13, 14, 18, 19, 20],
+          hiddenGridCellColor: 255,
+        },
+        [
+          normalizeGrayShades,
+          adjustContrast,
+          filterDarkerGrays,
+          addGridToImage,
+          showGridCells,
+        ],
       );
       ctx.putImageData(finalImage, 0, 0);
       output.src = canvas.toDataURL();

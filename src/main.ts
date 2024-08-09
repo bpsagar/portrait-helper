@@ -46,8 +46,8 @@ const processImage = (
           normalizeGrayShades,
           adjustContrast,
           filterDarkerGrays,
-          addGridToImage,
           showGridCells,
+          addGridToImage,
         ],
       );
       ctx.putImageData(finalImage, 0, 0);

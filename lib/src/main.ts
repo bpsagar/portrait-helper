@@ -1,4 +1,4 @@
-import { runPipeline } from './lib';
+import { runPipeline } from '../../src/lib/types';
 import {
   addGridToImage,
   adjustContrast,

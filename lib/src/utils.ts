@@ -1,4 +1,4 @@
-import { ImageTransformer, Options } from './lib';
+import { ImageTransformer, Options } from '../../src/lib/types';
 
 export const normalizeGrayShades: ImageTransformer = (
   imageData: ImageData,

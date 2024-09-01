@@ -1,13 +1,18 @@
 "use client";
 
+import { getTutorialStep } from "@/data/tutorials";
 import { runPipeline } from "@/lib";
 import ImageTag, { StaticImageData } from "next/image";
 import { useEffect, useState } from "react";
 
 export default function DrawingReference({
   image,
+  slug,
+  stepNo,
 }: {
   image: StaticImageData;
+  slug: string;
+  stepNo: number;
 }) {
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   useEffect(() => {
@@ -21,18 +26,8 @@ export default function DrawingReference({
       if (ctx) {
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, image.width, image.height);
-        const finalImage = runPipeline(imageData, {
-          contrastLevel: 20,
-          numberOfShades: 10,
-          grid: {
-            size: 70,
-            strokeSize: 1,
-            strokeColor: 200,
-          },
-          hiddenGridCellColor: 255,
-          maxGrayShade: 5,
-          showGridCells: [18, 19, 20, 24, 25, 26],
-        });
+        const stepOptions = getTutorialStep(slug, stepNo);
+        const finalImage = runPipeline(imageData, stepOptions);
         ctx.putImageData(finalImage, 0, 0);
         setImageDataUrl(canvas.toDataURL());
       }

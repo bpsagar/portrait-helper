@@ -3,32 +3,77 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-  font-family: 'Satoshi', sans-serif;
+  color: #222;
+  font-family: "Satoshi", sans-serif;
+}
+
+h1,
+h2 {
+  font-family: "Bricolage Grotesque", sans-serif;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+@layer components {
+  @property --bgcolor1 {
+    syntax: "<color>";
+    initial-value: #000;
+    inherits: false;
+  }
+  @property --bgcolor2 {
+    syntax: "<color>";
+    initial-value: #111;
+    inherits: false;
+  }
+  @property --bgcolor3 {
+    syntax: "<color>";
+    initial-value: #222;
+    inherits: false;
+  }
+  @property --bgcolor4 {
+    syntax: "<color>";
+    initial-value: #333;
+    inherits: false;
+  }
+  @property --bgcolor5 {
+    syntax: "<color>";
+    initial-value: #444;
+    inherits: false;
+  }
+
+  .btn-primary {
+    @apply inline-block font-medium text-white rounded-lg px-6 py-2;
+    background: linear-gradient(
+      90deg,
+      #000 0%,
+      var(--bgcolor1) 20%,
+      #111 21%,
+      var(--bgcolor2) 40%,
+      #222 41%,
+      var(--bgcolor3) 60%,
+      #333 61%,
+      var(--bgcolor4) 80%,
+      #444 81%,
+      var(--bgcolor5) 100%
+    );
+    transition: --bgcolor1 0.5s, --bgcolor2 0.5s, --bgcolor3 0.5s,
+      --bgcolor4 0.5s, --bgcolor5 0.5s, transform 0.2s;
+  }
+
+  .btn-primary:hover {
+    --bgcolor1: #111;
+    --bgcolor2: #222;
+    --bgcolor3: #333;
+    --bgcolor4: #444;
+    --bgcolor5: #555;
+    transform: scale(1.05);
+    @apply shadow-xl;
   }
 }

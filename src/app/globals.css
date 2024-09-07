@@ -49,7 +49,7 @@ h2 {
   }
 
   .btn-primary {
-    @apply inline-block font-medium text-white rounded-lg px-6 py-2;
+    @apply inline-block font-medium text-lg text-white rounded-lg px-6 py-3;
     background: linear-gradient(
       90deg,
       #000 0%,
@@ -63,8 +63,8 @@ h2 {
       #444 81%,
       var(--bgcolor5) 100%
     );
-    transition: --bgcolor1 0.5s, --bgcolor2 0.5s, --bgcolor3 0.5s,
-      --bgcolor4 0.5s, --bgcolor5 0.5s, transform 0.2s;
+    transition: --bgcolor1 0.2s, --bgcolor2 0.2s, --bgcolor3 0.2s,
+      --bgcolor4 0.2s, --bgcolor5 0.2s, transform 0.2s;
   }
 
   .btn-primary:hover {
@@ -74,6 +74,22 @@ h2 {
     --bgcolor4: #444;
     --bgcolor5: #555;
     transform: scale(1.05);
-    @apply shadow-xl;
+    @apply shadow-md;
+  }
+
+  .bg-box {
+    background-color: transparent;
+    background-image: linear-gradient(#eee 1px, transparent 1px),
+      linear-gradient(to right, #eee 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .bg-ivory-vignette {
+    background: radial-gradient(
+      ellipse at center,
+      transparent 0%,
+      transparent 50%,
+      #f6f7eb 90%,
+      #f6f7eb 100%
+    );
   }
 }

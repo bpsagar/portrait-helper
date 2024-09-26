@@ -1,6 +1,10 @@
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 import DrawingReference from "@/components/DrawingReference";
 import { convertTutorialToSteps, tutorials } from "@/data/tutorials";
 import { Tutorial } from "@/data/types";
+import NavigationButtons from "@/components/NavigationButtons";
 
 export async function generateStaticParams() {
   return tutorials
@@ -21,20 +25,19 @@ export default function Page({
 }) {
   const tutorial = tutorials.find((tutorial) => tutorial.slug === params.slug);
   const stepNo = +params.stepNo;
+
   return (
     <div>
       <h1>Draw portrait of {params.slug}</h1>
       {tutorial && (
         <DrawingReference
+          key={`${params.slug}-${stepNo}`}
           image={tutorial.image}
           slug={params.slug}
           stepNo={stepNo}
         />
       )}
-      <div>
-        {stepNo > 1 && <a href={`/draw/${params.slug}/${stepNo - 1}`}>Back</a>}
-      </div>
-      <a href={`/draw/${params.slug}/${stepNo + 1}`}>Next</a>
+      <NavigationButtons slug={params.slug} stepNo={stepNo} />
     </div>
   );
 }

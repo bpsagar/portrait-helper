@@ -16,9 +16,12 @@ export default function DrawingReference({
 }) {
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   useEffect(() => {
-    const img = new Image();
-    img.src = image.src;
-    img.onload = () => {
+    const processImage = async () => {
+      const img = new Image();
+      img.src = image.src;
+      await new Promise((resolve) => {
+        img.onload = resolve;
+      });
       const canvas = document.createElement("canvas");
       canvas.width = image.width;
       canvas.height = image.height;
@@ -32,13 +35,14 @@ export default function DrawingReference({
         setImageDataUrl(canvas.toDataURL());
       }
     };
-  });
+    processImage();
+  }, [image, slug, stepNo]);
   return (
     <div>
       {imageDataUrl && (
         <ImageTag
           src={imageDataUrl}
-          alt={"todo: drawing reference"}
+          alt={`Drawing reference for ${slug} step ${stepNo}`}
           width={560}
           height={100}
         />

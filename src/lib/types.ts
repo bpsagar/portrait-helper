@@ -12,8 +12,11 @@ export interface Options {
   // steps
   maxGrayShade: number;
   showGridCells: number[];
+
+  highlightColor: number[];
+  highlightCells: number[];
 }
 export type ImageTransformer = (
   imageData: ImageData,
-  options: Options
+  options: Options,
 ) => ImageData;

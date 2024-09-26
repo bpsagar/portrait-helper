@@ -2,6 +2,7 @@ import {
   addGridToImage,
   adjustContrast,
   filterDarkerGrays,
+  highlightGridCells,
   normalizeGrayShades,
   showGridCells,
 } from "./image-transformers";
@@ -14,6 +15,7 @@ export const runPipeline = (imageData: ImageData, options: Options) => {
     filterDarkerGrays,
     showGridCells,
     addGridToImage,
+    highlightGridCells,
   ];
   return transformers.reduce((imageData, transformer) => {
     return transformer(imageData, options);

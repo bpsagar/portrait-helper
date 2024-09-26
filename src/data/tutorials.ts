@@ -33,21 +33,30 @@ export const tutorials: Tutorial[] = [
 ];
 
 export const convertTutorialToSteps = (tutorial: Tutorial): Options[] => {
-  return tutorial.sections.reduce((acc: Options[], section): Options[] => {
-    return [
-      ...acc,
-      ...section.maxGrayShades.map(
-        (maxGrayShade): Options => ({
-          contrastLevel: tutorial.options.contrastLevel,
-          numberOfShades: tutorial.options.numberOfShades,
-          grid: tutorial.options.grid,
-          hiddenGridCellColor: tutorial.options.hiddenGridCellColor,
-          showGridCells: section.showGridCells,
-          maxGrayShade,
-        })
-      ),
-    ];
-  }, [] as Options[]);
+  return tutorial.sections.reduce(
+    (acc: Options[], section, index): Options[] => {
+      const cumulativeShowGridCells = tutorial.sections
+        .slice(0, index + 1)
+        .flatMap((s) => s.showGridCells);
+
+      return [
+        ...acc,
+        ...section.maxGrayShades.map(
+          (maxGrayShade): Options => ({
+            contrastLevel: tutorial.options.contrastLevel,
+            numberOfShades: tutorial.options.numberOfShades,
+            grid: tutorial.options.grid,
+            hiddenGridCellColor: tutorial.options.hiddenGridCellColor,
+            showGridCells: cumulativeShowGridCells,
+            maxGrayShade,
+            highlightColor: [9, 188, 138],
+            highlightCells: section.showGridCells,
+          }),
+        ),
+      ];
+    },
+    [] as Options[],
+  );
 };
 
 export const getTutorialStep = (slug: string, stepNo: number) => {

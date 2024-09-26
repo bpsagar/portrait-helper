@@ -1,6 +1,3 @@
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback } from "react";
 import DrawingReference from "@/components/DrawingReference";
 import { convertTutorialToSteps, tutorials } from "@/data/tutorials";
 import { Tutorial } from "@/data/types";

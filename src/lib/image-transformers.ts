@@ -54,12 +54,26 @@ export const filterDarkerGrays: ImageTransformer = (
     (_, i) => (i * 255) / (options.numberOfShades - 1),
   );
   const data = imageData.data;
-  for (let i = 0; i < data.length; i += 4) {
-    const grayscale = data[i];
-    if (grayscale > grayShades[options.maxGrayShade]) {
-      data[i] = 255;
-      data[i + 1] = 255;
-      data[i + 2] = 255;
+  const gridSize = options.grid.size;
+  const numberOfCellsInRow = Math.round(imageData.width / gridSize);
+
+  for (let y = 0; y < imageData.height; y++) {
+    for (let x = 0; x < imageData.width; x++) {
+      const i = (y * imageData.width + x) * 4;
+      const cellNumber =
+        Math.floor(y / gridSize) * numberOfCellsInRow +
+        Math.floor(x / gridSize);
+      const maxShade =
+        options.cellMaxShades && options.cellMaxShades[cellNumber] !== undefined
+          ? options.cellMaxShades[cellNumber]
+          : options.maxGrayShade;
+
+      const grayscale = data[i];
+      if (grayscale > grayShades[maxShade]) {
+        data[i] = 255;
+        data[i + 1] = 255;
+        data[i + 2] = 255;
+      }
     }
   }
   return imageData;

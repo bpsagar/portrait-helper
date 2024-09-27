@@ -15,7 +15,10 @@ export interface Options {
 
   highlightColor: number[];
   highlightCells: number[];
+
+  cellMaxShades: { [key: number]: number };
 }
+
 export type ImageTransformer = (
   imageData: ImageData,
   options: Options,

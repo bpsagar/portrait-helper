@@ -39,6 +39,15 @@ export const convertTutorialToSteps = (tutorial: Tutorial): Options[] => {
         .slice(0, index + 1)
         .flatMap((s) => s.showGridCells);
 
+      const cellMaxShades: { [key: number]: number } = {};
+      if (index > 0) {
+        tutorial.sections.slice(0, index).forEach((prevSection) => {
+          prevSection.showGridCells.forEach((cell) => {
+            cellMaxShades[cell] = Math.max(...prevSection.maxGrayShades);
+          });
+        });
+      }
+
       return [
         ...acc,
         ...section.maxGrayShades.map(
@@ -51,6 +60,7 @@ export const convertTutorialToSteps = (tutorial: Tutorial): Options[] => {
             maxGrayShade,
             highlightColor: [9, 188, 138],
             highlightCells: section.showGridCells,
+            cellMaxShades,
           }),
         ),
       ];

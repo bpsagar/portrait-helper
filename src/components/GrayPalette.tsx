@@ -17,15 +17,19 @@ const GrayPalette: React.FC<GrayPaletteProps> = ({
       squares.push(
         <div
           key={i}
-          className={`w-8 h-8 ${i === highlightedIndex ? "border-2 border-mint-green" : "border border-gray-300"}`}
-          style={{ backgroundColor }}
+          className={`aspect-square ${i === highlightedIndex ? "border-2 border-mint-green" : "border border-gray-300"}`}
+          style={{ backgroundColor, flex: 1 }}
         />,
       );
     }
     return squares;
   };
 
-  return <div className="flex flex-row gap-2">{generateShades()}</div>;
+  return (
+    <div className="flex flex-row gap-2 w-full max-w-screen-sm mx-auto">
+      {generateShades()}
+    </div>
+  );
 };
 
 export default GrayPalette;

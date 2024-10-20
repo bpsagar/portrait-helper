@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import ArrowLeftIcon from "@/components/ArrowLeftIcon";
 import ArrowRightIcon from "@/components/ArrowRightIcon";
 
@@ -30,6 +30,19 @@ export default function NavigationButtons({
 
   const isFirstStep = stepNo === 1;
   const isLastStep = stepNo === totalSteps;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight" && !isLastStep) {
+        handleNavigation(stepNo + 1);
+      } else if (e.key === "ArrowLeft" && !isFirstStep) {
+        handleNavigation(stepNo - 1);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleNavigation, isFirstStep, isLastStep, stepNo]);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 flex justify-center">

@@ -64,7 +64,7 @@ export default function NavigationButtons({
             className={`flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 ${
               isLastStep
                 ? "text-slate-400 cursor-not-allowed"
-                : "hover:bg-gray-200"
+                : "hover:bg-gray-400"
             } transition-colors`}
           >
             <ArrowRightIcon width={16} height={16} />

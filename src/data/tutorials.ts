@@ -45,7 +45,9 @@ export const tutorials: Tutorial[] = [
       },
       {
         title: "Hair",
-        showGridCells: [1, 2, 3, 4, 6, 7, 8, 9, 10, 12, 13, 16, 17, 18, 19, 23],
+        showGridCells: [
+          0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 12, 13, 16, 17, 18, 19, 23,
+        ],
         maxGrayShades: [0, 1, 2, 3, 4, 5],
       },
       {

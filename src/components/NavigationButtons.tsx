@@ -36,12 +36,14 @@ export default function NavigationButtons({
       <div className="flex justify-between items-center w-full max-w-[400px] p-4 bg-white shadow-md">
         <div>
           <Link
-            href={`/draw/${slug}/${stepNo - 1}`}
-            onClick={() => !isFirstStep && handleNavigation(stepNo - 1)}
-            className={`flex items-center justify-center w-8 h-8 rounded-full ${
+            href={isFirstStep ? "#" : `/draw/${slug}/${stepNo - 1}`}
+            onClick={(e) =>
+              isFirstStep ? e.preventDefault() : handleNavigation(stepNo - 1)
+            }
+            className={`flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 ${
               isFirstStep
-                ? "bg-gray-200 cursor-not-allowed"
-                : "bg-gray-300 hover:bg-gray-400"
+                ? "text-slate-400 cursor-not-allowed"
+                : "hover:bg-gray-200"
             } transition-colors`}
           >
             <ArrowLeftIcon width={16} height={16} />
@@ -55,12 +57,14 @@ export default function NavigationButtons({
         </div>
         <div>
           <Link
-            href={`/draw/${slug}/${stepNo + 1}`}
-            onClick={() => !isLastStep && handleNavigation(stepNo + 1)}
-            className={`flex items-center justify-center w-8 h-8 rounded-full ${
+            href={isLastStep ? "#" : `/draw/${slug}/${stepNo + 1}`}
+            onClick={(e) =>
+              isLastStep ? e.preventDefault() : handleNavigation(stepNo + 1)
+            }
+            className={`flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 ${
               isLastStep
-                ? "bg-gray-200 cursor-not-allowed"
-                : "bg-gray-300 hover:bg-gray-400"
+                ? "text-slate-400 cursor-not-allowed"
+                : "hover:bg-gray-200"
             } transition-colors`}
           >
             <ArrowRightIcon width={16} height={16} />

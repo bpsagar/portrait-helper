@@ -23,6 +23,12 @@ export default function Page({
   const tutorial = tutorials.find((tutorial) => tutorial.slug === params.slug);
   const stepNo = +params.stepNo;
 
+  let totalSteps = 0;
+  if (tutorial) {
+    const steps = convertTutorialToSteps(tutorial);
+    totalSteps = steps.length;
+  }
+
   return (
     <div>
       <h1>Draw portrait of {params.slug}</h1>
@@ -34,7 +40,11 @@ export default function Page({
           stepNo={stepNo}
         />
       )}
-      <NavigationButtons slug={params.slug} stepNo={stepNo} />
+      <NavigationButtons
+        slug={params.slug}
+        stepNo={stepNo}
+        totalSteps={totalSteps}
+      />
     </div>
   );
 }

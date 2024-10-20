@@ -38,7 +38,7 @@ export default function DrawingReference({
     processImage();
   }, [image, slug, stepNo]);
   return (
-    <div>
+    <div className="border-2 border-gray-200">
       {imageDataUrl && (
         <ImageTag
           src={imageDataUrl}

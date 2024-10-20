@@ -18,7 +18,9 @@ export interface Options {
 
   cellMaxShades: { [key: number]: number };
 
-  meta: object;
+  meta: {
+    title: string;
+  };
 }
 
 export type ImageTransformer = (

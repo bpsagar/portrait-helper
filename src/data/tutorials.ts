@@ -111,6 +111,9 @@ export const convertTutorialToSteps = (tutorial: Tutorial): Options[] => {
           highlightColor: [9, 188, 138],
           highlightCells: [],
           cellMaxShades: {},
+          meta: {
+            title: "Highlights",
+          },
         };
       },
     ),

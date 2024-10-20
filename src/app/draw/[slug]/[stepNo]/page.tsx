@@ -3,6 +3,7 @@ import NavigationButtons from "@/components/NavigationButtons";
 import DrawingReference from "@/components/DrawingReference";
 import { convertTutorialToSteps, tutorials } from "@/data/tutorials";
 import { Tutorial } from "@/data/types";
+import { Options } from "@/lib/types";
 
 export async function generateStaticParams() {
   return tutorials

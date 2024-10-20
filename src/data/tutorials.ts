@@ -9,7 +9,7 @@ export const tutorials: Tutorial[] = [
     image: messiReferenceImage,
     options: {
       contrastLevel: 20,
-      numberOfShades: 10,
+      numberOfShades: 8,
       grid: {
         size: 70,
         strokeSize: 1,
@@ -21,39 +21,39 @@ export const tutorials: Tutorial[] = [
       {
         title: "Eyes",
         showGridCells: [20, 21, 22],
-        maxGrayShades: [0, 1, 2, 3, 4, 5],
+        maxGrayShades: [1, 2, 3],
       },
       {
         title: "Nose",
         showGridCells: [27, 28],
-        maxGrayShades: [0, 1, 2, 3, 4, 5],
+        maxGrayShades: [1, 2, 3],
       },
       {
         title: "Mouth",
         showGridCells: [33, 34],
-        maxGrayShades: [0, 1, 2, 3, 4, 5],
+        maxGrayShades: [1, 2, 3],
       },
       {
         title: "Chin, cheeks and jaw",
         showGridCells: [26, 29, 32, 35, 37, 38, 39, 40, 41],
-        maxGrayShades: [0, 1, 2, 3, 4, 5],
+        maxGrayShades: [1, 2, 3],
       },
       {
         title: "Ear",
         showGridCells: [24, 25, 30, 31],
-        maxGrayShades: [0, 1, 2, 3, 4, 5],
+        maxGrayShades: [1, 2, 3],
       },
       {
         title: "Hair",
         showGridCells: [
           0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 12, 13, 16, 17, 18, 19, 23,
         ],
-        maxGrayShades: [0, 1, 2, 3, 4, 5],
+        maxGrayShades: [1, 2, 3],
       },
       {
         title: "Rest of the face",
         showGridCells: [14, 15, 43, 44, 45, 46, 47],
-        maxGrayShades: [0, 1, 2, 3, 4, 5],
+        maxGrayShades: [1, 2, 3],
       },
     ],
   },
@@ -99,10 +99,13 @@ export const convertTutorialToSteps = (tutorial: Tutorial): Options[] => {
       {
         length:
           tutorial.options.numberOfShades -
-          Math.max(...tutorial.sections.flatMap((s) => s.maxGrayShades)),
+          Math.max(...tutorial.sections.flatMap((s) => s.maxGrayShades)) -
+          1, // no need to include the last shade as it's white
       },
       (_, index) => {
-        const maxGrayShade = index + 6;
+        const maxGrayShade =
+          index +
+          Math.max(...tutorial.sections.flatMap((s) => s.maxGrayShades));
         return {
           contrastLevel: tutorial.options.contrastLevel,
           numberOfShades: tutorial.options.numberOfShades,

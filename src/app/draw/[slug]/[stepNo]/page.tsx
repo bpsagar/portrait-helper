@@ -54,7 +54,6 @@ export default function Page({
           {tutorial && (
             <DrawingReference
               key={`${params.slug}-${stepNo}`}
-              image={tutorial.image}
               slug={params.slug}
               stepNo={stepNo}
             />

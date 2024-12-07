@@ -1,22 +1,26 @@
 "use client";
 
-import { getTutorialStep } from "@/data/tutorials";
+import { Options } from "@/lib/types";
+
+import { getTutorialStep, tutorials } from "@/data/tutorials";
 import { runPipeline } from "@/lib";
 import ImageTag, { StaticImageData } from "next/image";
 import { useEffect, useState } from "react";
 
 export default function DrawingReference({
-  image,
   slug,
   stepNo,
+  options,
 }: {
-  image: StaticImageData;
   slug: string;
   stepNo: number;
+  options?: Partial<Options>;
 }) {
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const tutorial = tutorials.find((tutorial) => tutorial.slug === slug)!;
   useEffect(() => {
     const processImage = async () => {
+      const image = tutorial.image;
       const img = new Image();
       img.src = image.src;
       await new Promise((resolve) => {
@@ -29,14 +33,17 @@ export default function DrawingReference({
       if (ctx) {
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, image.width, image.height);
-        const stepOptions = getTutorialStep(slug, stepNo);
+        const stepOptions = {
+          ...getTutorialStep(slug, stepNo),
+          ...options,
+        };
         const finalImage = runPipeline(imageData, stepOptions);
         ctx.putImageData(finalImage, 0, 0);
         setImageDataUrl(canvas.toDataURL());
       }
     };
     processImage();
-  }, [image, slug, stepNo]);
+  }, [slug, stepNo, tutorial.image, options]);
   return (
     <div className="border-2 border-gray-200">
       {imageDataUrl && (

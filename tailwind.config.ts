@@ -17,6 +17,10 @@ const config: Config = {
         "mint-green": "#09BC8A",
         ivory: "#F6F7EB",
       },
+      fontFamily: {
+        sans: ['"Satoshi"', "sans-serif"],
+        serif: ['"Bricolage Grotesque"', "serif"],
+      },
     },
   },
   plugins: [],

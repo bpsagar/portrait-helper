@@ -20,6 +20,10 @@ export default function Page() {
         <div className="bg-ivory-vignette">
           <div className="container max-w-2xl mx-auto text-center py-24 px-4">
             <h1 className="text-6xl font-medium tracking-tight">
+              <span className="text-sm text-slate-500 font-sans uppercase tracking-[0]">
+                Get started with portrait drawing:{" "}
+              </span>
+              <br />
               Yes, you can draw a <br />
               <span className="text-mint-green">portrait</span> too!
             </h1>

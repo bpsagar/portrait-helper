@@ -1,4 +1,5 @@
 import messiReferenceImage from "@/../public/references/messi.jpg";
+import ronaldoReferenceImage from "@/../public/references/ronaldo.jpg";
 import { Tutorial } from "./types";
 import { Options } from "../lib/types";
 
@@ -53,6 +54,55 @@ export const tutorials: Tutorial[] = [
       {
         title: "Rest of the face",
         showGridCells: [14, 15, 43, 44, 45, 46, 47],
+        maxGrayShades: [1, 2, 3],
+      },
+    ],
+  },
+  {
+    slug: "ronaldo",
+    title: "Cristiano Ronaldo",
+    image: ronaldoReferenceImage,
+    options: {
+      contrastLevel: 20,
+      numberOfShades: 8,
+      grid: {
+        size: 70,
+        strokeSize: 1,
+        strokeColor: 200,
+      },
+      hiddenGridCellColor: 255,
+    },
+    sections: [
+      {
+        title: "Eyes",
+        showGridCells: [19, 20, 21, 22],
+        maxGrayShades: [1, 2, 3],
+      },
+      {
+        title: "Nose",
+        showGridCells: [25, 26, 27],
+        maxGrayShades: [1, 2, 3],
+      },
+      {
+        title: "Mouth",
+        showGridCells: [31, 32, 33],
+        maxGrayShades: [1, 2, 3],
+      },
+      {
+        title: "Chin, cheeks and jaw",
+        showGridCells: [30, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47],
+        maxGrayShades: [1, 2, 3],
+      },
+      {
+        title: "Ear",
+        showGridCells: [24, 28, 29, 30, 34, 35],
+        maxGrayShades: [1, 2, 3],
+      },
+      {
+        title: "Hair",
+        showGridCells: [
+          0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 23,
+        ],
         maxGrayShades: [1, 2, 3],
       },
     ],

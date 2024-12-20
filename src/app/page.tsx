@@ -1,7 +1,6 @@
 "use client";
 
 import DrawingReference from "@/components/DrawingReference";
-import Head from "next/head";
 import { useState, useEffect } from "react";
 
 export default function Page() {
@@ -16,58 +15,49 @@ export default function Page() {
   }, []);
 
   return (
-    <>
-      <Head>
-        <link
-          rel="canonical"
-          href="https://portrait.coach/"
-        />
-      </Head>
-      <div className="bg-ivory min-h-screen">
-        <div className="bg-box">
-          <div className="bg-ivory-vignette">
-            <div className="container max-w-2xl mx-auto text-center py-24 px-4">
-              <h1 className="text-6xl font-medium tracking-tight">
-                <span className="text-sm text-slate-500 font-sans uppercase tracking-[0]">
-                  Get started with portrait drawing:{" "}
-                </span>
-                <br />
-                Yes, you can draw a <br />
-                <span className="text-mint-green">portrait</span> too!
-              </h1>
+    <div className="bg-ivory min-h-screen">
+      <div className="bg-box">
+        <div className="bg-ivory-vignette">
+          <div className="container max-w-2xl mx-auto text-center py-24 px-4">
+            <h1 className="text-6xl font-medium tracking-tight">
+              <span className="text-sm text-slate-500 font-sans uppercase tracking-[0]">
+                Get started with portrait drawing:{" "}
+              </span>
+              <br />
+              Yes, you can draw a <br />
+              <span className="text-mint-green">portrait</span> too!
+            </h1>
 
-              <div className="flex gap-4 overflow-x-auto py-8 px-4 mt-2 items-center justify-center">
-                <div className="max-w-[240px]">
-                  <DrawingReference
-                    slug="messi"
-                    stepNo={step}
-                    options={{
-                      grid: {
-                        size: 70,
-                        strokeSize: 0,
-                        strokeColor: 1,
-                      },
-                    }}
-                  />
-                </div>
+            <div className="flex gap-4 overflow-x-auto py-8 px-4 mt-2 items-center justify-center">
+              <div className="max-w-[240px]">
+                <DrawingReference
+                  slug="messi"
+                  stepNo={step}
+                  options={{
+                    grid: {
+                      size: 70,
+                      strokeSize: 0,
+                      strokeColor: 1,
+                    },
+                  }}
+                />
               </div>
+            </div>
 
-              <p className="text-xl text-slate-700 mt-10">
-                We get it, portrait drawing techniques are complicated but they
-                don't have to be. Our step-by-step guide helps you create
-                realistic portrait drawings with ease.
-              </p>
+            <p className="text-xl text-slate-700 mt-10">
+              We get it, portrait drawing techniques are complicated but they
+              don't have to be. Our step-by-step guide helps you create
+              realistic portrait drawings with ease.
+            </p>
 
-              <div className="mt-10">
-                <a className="btn-primary" href="#">
-                  Get started
-                </a>
-              </div>
+            <div className="mt-10">
+              <a className="btn-primary" href="#">
+                Get started
+              </a>
             </div>
           </div>
         </div>
       </div>
-    </>
-
+    </div>
   );
 }

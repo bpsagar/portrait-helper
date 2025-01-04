@@ -92,4 +92,16 @@ h2 {
       #f6f7eb 100%
     );
   }
+  .bg-green-vignette {
+    background: radial-gradient(
+      ellipse at center,
+      transparent 0%,
+      transparent 0%,
+      #c5fcec 100%,
+      #c5fcec 100%
+    );
+  }
+  .bg-footer-black {
+    background-color: #444444;
+  }
 }

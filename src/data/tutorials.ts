@@ -1,5 +1,6 @@
 import messiReferenceImage from "@/../public/references/messi.jpg";
 import ronaldoReferenceImage from "@/../public/references/ronaldo.jpg";
+import eyesReferenceImage from "@/../public/references/eyes.jpg";
 import { Tutorial } from "./types";
 import { Options } from "../lib/types";
 
@@ -104,6 +105,28 @@ export const tutorials: Tutorial[] = [
           0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 23,
         ],
         maxGrayShades: [1, 2, 3],
+      },
+    ],
+  },
+  {
+    slug: "eyes",
+    title: "eyes",
+    image: eyesReferenceImage,
+    options: {
+      contrastLevel: 10,
+      numberOfShades: 8,
+      grid: {
+        size: 70,
+        strokeSize: 1,
+        strokeColor: 200,
+      },
+      hiddenGridCellColor: 255,
+    },
+    sections: [
+      {
+        title: "",
+        showGridCells: Array.from({ length: 48 }, (_, i) => i),
+        maxGrayShades: [0, 1, 2, 3, 5, 7],
       },
     ],
   },

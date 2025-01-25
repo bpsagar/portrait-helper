@@ -4,6 +4,7 @@ import Accordion from "@/components/Accordion";
 import DrawingReference from "@/components/DrawingReference";
 import LogoWithTitle from "@/components/LogoWithTitle";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 export default function Page() {
   const [step, setStep] = useState(1);
@@ -59,7 +60,7 @@ export default function Page() {
 
             <p className="text-xl text-slate-700 mt-10">
               We get it, portrait drawing techniques are complicated but they
-              don't have to be. Our step-by-step guide helps you create
+              don&apos;t have to be. Our step-by-step guide helps you create
               realistic portrait drawings with ease.
             </p>
 
@@ -81,7 +82,7 @@ export default function Page() {
           <div className="flex-1 flex items-center justify-center">
             <p className="text-lg text-slate-700">
               Portrait drawing can seem daunting, with all the talk of anatomy
-              and proportions. You're not alone. Many budding artists feel this
+              and proportions. You&apos;re not alone. Many budding artists feel this
               way, doubting their skills even before they put pencil to paper.
             </p>
           </div>
@@ -93,8 +94,8 @@ export default function Page() {
             Take the easy route
           </h2>
           <p className="text-lg text-slate-700 text-left mb-4">
-            But don't worry—there's no need to feel pressured to follow complex,
-            'pure' artistic methods.
+            But don&apos;t worry—there&apos;s no need to feel pressured to
+            follow complex, &apos;pure&apos; artistic methods.
           </p>
           <p className="text-lg text-slate-700 text-left">
             You deserve to enjoy the process and be proud of your work.
@@ -114,7 +115,12 @@ export default function Page() {
             />
           </div>
           <div className="flex-1">
-            <img src="/references/messi_dark.png" alt="messi image" />
+            <Image
+              src="/references/messi_dark.png"
+              alt="messi image"
+              width={500}
+              height={500}
+            />
           </div>
         </div>
       </section>
@@ -125,13 +131,13 @@ export default function Page() {
           </h2>
           <p className="text-lg text-slate-700 text-left mb-4">
             We believe everyone deserves to feel accomplished in their artistic
-            journey. We understand the frustration when a portrait doesn't turn
+            journey. We understand the frustration when a portrait doesn&apos;t turn
             out right, and the defeat after investing so much time and energy.
           </p>
           <p className="text-lg text-slate-700 text-left">
-            We've been there, and we've found a better approach to portrait
-            sketching, free from the pressure of "proper" techniques. Now, we
-            want to help you feel proud of your completed drawings.
+            We&apos;ve been there, and we&apos;ve found a better approach to portrait
+            sketching, free from the pressure of &quot;proper&quot; techniques.
+            Now, we want to help you feel proud of your completed drawings.
           </p>
         </div>
       </section>

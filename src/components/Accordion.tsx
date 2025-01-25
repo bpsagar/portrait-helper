@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Image from "next/image";
 
 type AccordionProps = {
   title: string;
@@ -21,16 +22,20 @@ const Accordion: React.FC<AccordionProps> = ({ title, description }) => {
         <h2 className="text-2xl font-medium">{title}</h2>
         <span className="text-black">
           {isOpen ? (
-            <img
+            <Image
               className="h-[25px] w-auto"
               src="/references/chevron-down.png"
               alt="down"
+              width={25}
+              height={25}
             />
           ) : (
-            <img
+            <Image
               className="h-[25px] w-auto"
               src="/references/chevron-up.png"
               alt="up"
+              width={25}
+              height={25}
             />
           )}
         </span>

@@ -11,10 +11,12 @@ export default function DrawingReference({
   slug,
   stepNo,
   options,
+  opacity = 1,
 }: {
   slug: string;
   stepNo: number;
   options?: Partial<Options>;
+  opacity?: number;
 }) {
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const tutorial = tutorials.find((tutorial) => tutorial.slug === slug)!;
@@ -52,6 +54,7 @@ export default function DrawingReference({
           alt={`Drawing reference for ${slug} step ${stepNo}`}
           width={560}
           height={100}
+          style={{ opacity }}
         />
       )}
     </div>

@@ -11,26 +11,37 @@ export default function ARContainer({
   stepNo,
   tutorial,
 }: {
-  slug: string;
+  slug:string;
   stepNo: number;
   tutorial: any;
 }) {
   const [isArEnabled, setIsArEnabled] = useState(false);
   const [opacity, setOpacity] = useState(1);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setError(null);
     if (isArEnabled) {
-      navigator.mediaDevices
-        .getUserMedia({ video: { facingMode: "environment" } })
-        .then((stream) => {
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-        })
-        .catch((err) => {
-          console.error("Error accessing camera: ", err);
-        });
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices
+          .getUserMedia({ video: { facingMode: "environment" } })
+          .then((stream) => {
+            if (videoRef.current) {
+              videoRef.current.srcObject = stream;
+            }
+          })
+          .catch((err) => {
+            console.error("Error accessing camera: ", err);
+            setError(
+              "Error accessing camera. Please make sure you have given permission and are on a secure connection (HTTPS).",
+            );
+          });
+      } else {
+        setError(
+          "AR mode is not supported on this browser or device. Please use a modern browser on a secure connection (HTTPS).",
+        );
+      }
     } else {
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
@@ -48,6 +59,7 @@ export default function ARContainer({
           <OpacitySlider opacity={opacity} onOpacityChange={setOpacity} />
         )}
       </div>
+      {error && <div className="text-red-500 text-center pb-4">{error}</div>}
       <div className="container mx-auto px-4 py-4 flex items-center justify-center mb-24 relative">
         {isArEnabled && (
           <video

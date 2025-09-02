@@ -21,35 +21,44 @@ export default function ARContainer({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isArEnabled) {
+      setOpacity(1);
+      return;
+    }
+
     setError(null);
-    if (isArEnabled) {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices
-          .getUserMedia({ video: { facingMode: "environment" } })
-          .then((stream) => {
-            if (videoRef.current) {
-              videoRef.current.srcObject = stream;
-            }
-          })
-          .catch((err) => {
-            console.error("Error accessing camera: ", err);
-            setError(
-              "Error accessing camera. Please make sure you have given permission and are on a secure connection (HTTPS).",
-            );
-          });
-      } else {
+    let stream: MediaStream | null = null;
+
+    const enableAr = async () => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         setError(
           "AR mode is not supported on this browser or device. Please use a modern browser on a secure connection (HTTPS).",
         );
+        return;
       }
-    } else {
-      setOpacity(1);
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+        });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.error("Error accessing camera: ", err);
+        setError(
+          "Error accessing camera. Please make sure you have given permission and are on a secure connection (HTTPS).",
+        );
+      }
+    };
+
+    enableAr();
+
+    return () => {
+      if (stream) {
         stream.getTracks().forEach((track) => track.stop());
-        videoRef.current.srcObject = null;
       }
-    }
+    };
   }, [isArEnabled]);
 
   return (

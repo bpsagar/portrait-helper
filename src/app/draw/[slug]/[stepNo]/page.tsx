@@ -1,6 +1,5 @@
 import Navbar from "@/components/Navbar";
 import NavigationButtons from "@/components/NavigationButtons";
-import DrawingReference from "@/components/DrawingReference";
 import {
   convertTutorialToSteps,
   getTutorialStep,
@@ -9,6 +8,7 @@ import {
 import { Tutorial } from "@/data/types";
 import { Options } from "@/lib/types";
 import GrayPalette from "@/components/GrayPalette";
+import ARContainer from "@/components/ARContainer";
 
 export async function generateStaticParams() {
   return tutorials
@@ -50,15 +50,7 @@ export default function Page({
             />
           )}
         </div>
-        <div className="container mx-auto px-4 py-4 flex items-center justify-center mb-24">
-          {tutorial && (
-            <DrawingReference
-              key={`${params.slug}-${stepNo}`}
-              slug={params.slug}
-              stepNo={stepNo}
-            />
-          )}
-        </div>
+        <ARContainer slug={params.slug} stepNo={stepNo} tutorial={tutorial} />
         <div className="container mx-auto px-4">
           <NavigationButtons
             slug={params.slug}

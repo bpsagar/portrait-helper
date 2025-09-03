@@ -1,6 +1,6 @@
 "use client";
 import DrawingReference from "@/components/DrawingReference";
-import { tutorials } from "@/data/tutorials";
+import { tutorials, convertTutorialToSteps } from "@/data/tutorials";
 import { Tutorial } from "@/data/types";
 import Link from "next/link";
 
@@ -23,13 +23,28 @@ export default function GalleryPage() {
           <div key={category} className="mb-8">
             <h2 className="text-2xl font-bold mb-4">{category}</h2>
             <div className="flex overflow-x-auto gap-4 py-4">
-              {tutorials.map((tutorial) => (
-                <div key={tutorial.slug} className="flex-shrink-0 w-64">
-                  <Link href={`/draw/${tutorial.slug}/1`}>
-                    <DrawingReference slug={tutorial.slug} />
-                  </Link>
-                </div>
-              ))}
+              {tutorials.map((tutorial) => {
+                const steps = convertTutorialToSteps(tutorial);
+                const lastStep = steps.length;
+                return (
+                  <div key={tutorial.slug} className="flex-shrink-0 w-64">
+                    <Link href={`/draw/${tutorial.slug}/1`}>
+                      <DrawingReference
+                        slug={tutorial.slug}
+                        stepNo={lastStep}
+                        options={{
+                          grid: {
+                            strokeSize: 0,
+                          },
+                        }}
+                      />
+                      <p className="text-center mt-2 font-bold">
+                        {tutorial.title}
+                      </p>
+                    </Link>
+                  </div>
+                );
+              })}
             </div>
           </div>
         ))}

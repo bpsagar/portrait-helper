@@ -9,6 +9,7 @@ export const tutorials: Tutorial[] = [
     slug: "messi",
     title: "Lionel Messi",
     image: messiReferenceImage,
+    categories: ["Footballers"],
     options: {
       contrastLevel: 20,
       numberOfShades: 8,
@@ -63,6 +64,7 @@ export const tutorials: Tutorial[] = [
     slug: "ronaldo",
     title: "Cristiano Ronaldo",
     image: ronaldoReferenceImage,
+    categories: ["Footballers"],
     options: {
       contrastLevel: 20,
       numberOfShades: 8,
@@ -112,6 +114,7 @@ export const tutorials: Tutorial[] = [
     slug: "eyes",
     title: "eyes",
     image: eyesReferenceImage,
+    categories: ["Face Parts"],
     options: {
       contrastLevel: 10,
       numberOfShades: 8,

@@ -21,4 +21,5 @@ export interface Tutorial {
     hiddenGridCellColor: number;
   };
   sections: TutorialSection[];
+  categories: string[];
 }

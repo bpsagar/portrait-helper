@@ -65,8 +65,8 @@ export default function Page() {
             </p>
 
             <div className="mt-10">
-              <a className="btn-primary" href="#">
-                Get started
+              <a className="btn-primary" href="/gallery">
+                View Gallery
               </a>
             </div>
           </div>
@@ -152,11 +152,6 @@ export default function Page() {
               aspects of portrait drawing. See tangible improvements in your
               work and motivation to continue creating.
             </p>
-            <div className="text-center">
-              <a className="btn-primary" href="#get-started">
-                Start here
-              </a>
-            </div>
           </div>
         </div>
       </section>

@@ -1,5 +1,6 @@
 import messiReferenceImage from "@/../public/references/messi.jpg";
 import ronaldoReferenceImage from "@/../public/references/ronaldo.jpg";
+import akramDeptqReferenceImage from "@/../public/references/akram-deptq.jpg";
 import eyesReferenceImage from "@/../public/references/eyes.jpg";
 import { Tutorial } from "./types";
 import { Options } from "../lib/types";
@@ -106,6 +107,63 @@ export const tutorials: Tutorial[] = [
         ],
         maxGrayShades: [1, 2, 3],
       },
+    ],
+  },
+  {
+    slug: "akram-deptq",
+    title: "Akram from Dept Q TV Series",
+    image: akramDeptqReferenceImage,
+    options: {
+      contrastLevel: 0,
+      numberOfShades: 8,
+      grid: {
+        size: 70,
+        strokeSize: 1,
+        strokeColor: 200,
+      },
+      hiddenGridCellColor: 255,
+    },
+    sections: [
+      {
+        title: "Eyes",
+        showGridCells: [20, 21, 22],
+        maxGrayShades: [1, 2, 3],
+      },
+      {
+        title: "Nose",
+        showGridCells: [27],
+        maxGrayShades: [1, 2, 3],
+      },
+      {
+        title: "Mouth",
+        showGridCells: [26, 32, 33],
+        maxGrayShades: [1, 2, 3],
+      },
+      {
+        title: "Chin, cheeks and jaw",
+        showGridCells: [31, 32, 34, 28, 25],
+        maxGrayShades: [1, 2, 3],
+      },
+      {
+        title: "Ear",
+        showGridCells: [19, 13],
+        maxGrayShades: [1, 2, 3],
+      },
+      {
+        title: "Hair",
+        showGridCells: [
+          1, 2, 3, 7, 8, 9, 10, 11, 14, 15, 16, 17, 23,
+        ],
+        maxGrayShades: [1, 2, 3],
+      },
+      {
+        title: "Clothes and background",
+        showGridCells: [
+          0, 4, 5, 6, 12, 18, 24, 29, 30, 35, 36, 37, 38, 39, 40, 41, 42, 43,
+          44, 45, 46, 47,
+        ],
+        maxGrayShades: [1, 2, 3],
+      }
     ],
   },
   {

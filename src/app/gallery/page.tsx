@@ -1,5 +1,6 @@
 "use client";
 import DrawingReference from "@/components/DrawingReference";
+import Navbar from "@/components/Navbar";
 import { tutorials, convertTutorialToSteps } from "@/data/tutorials";
 import { Tutorial } from "@/data/types";
 import Link from "next/link";
@@ -17,6 +18,7 @@ export default function GalleryPage() {
 
   return (
     <div className="bg-ivory min-h-screen">
+      <Navbar />
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold mb-8">Gallery</h1>
         {Object.entries(tutorialsByCategory).map(([category, tutorials]) => (

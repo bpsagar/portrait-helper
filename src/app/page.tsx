@@ -3,6 +3,7 @@
 import Accordion from "@/components/Accordion";
 import DrawingReference from "@/components/DrawingReference";
 import LogoWithTitle from "@/components/LogoWithTitle";
+import Navbar from "@/components/Navbar";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 
@@ -27,9 +28,7 @@ export default function Page() {
 
   return (
     <div className="bg-ivory min-h-screen">
-      <div className="bg-ivory container mx-auto px-4 py-4 flex items-center justify-center">
-        <LogoWithTitle />
-      </div>
+      <Navbar />
       <section className="bg-box">
         <div className="bg-ivory-vignette">
           <div className="container max-w-2xl mx-auto text-center pb-24">

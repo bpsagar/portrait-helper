@@ -17,7 +17,7 @@ export default function ARContainer({
   tutorial: any;
 }) {
   const [isArEnabled, setIsArEnabled] = useState(false);
-  const [isGridEnabled, setIsGridEnabled] = useState(false);
+  const [isGridEnabled, setIsGridEnabled] = useState(true);
   const [opacity, setOpacity] = useState(1);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +90,11 @@ export default function ARContainer({
               slug={slug}
               stepNo={stepNo}
               opacity={opacity}
-              isGridEnabled={isGridEnabled}
+              options={{
+                grid: {
+                  strokeSize: isGridEnabled ? 1 : 0,
+                },
+              }}
             />
           )}
         </div>

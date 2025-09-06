@@ -2,21 +2,29 @@
 
 import { useEffect, useRef, useState } from "react";
 import ARSwitch from "./ARSwitch";
+import GridSwitch from "./GridSwitch";
 import OpacitySlider from "./OpacitySlider";
 import DrawingReference from "./DrawingReference";
 import { Options } from "@/lib/types";
+import { useDrawingSettings } from "@/context/DrawingSettingsContext";
 
 export default function ARContainer({
   slug,
   stepNo,
   tutorial,
 }: {
-  slug:string;
+  slug: string;
   stepNo: number;
   tutorial: any;
 }) {
-  const [isArEnabled, setIsArEnabled] = useState(false);
-  const [opacity, setOpacity] = useState(1);
+  const {
+    isArEnabled,
+    setIsArEnabled,
+    isGridEnabled,
+    setIsGridEnabled,
+    opacity,
+    setOpacity,
+  } = useDrawingSettings();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,6 +73,7 @@ export default function ARContainer({
     <div>
       <div className="container mx-auto px-4 flex items-center justify-center gap-4 my-4">
         <ARSwitch isArEnabled={isArEnabled} onToggle={setIsArEnabled} />
+        <GridSwitch isGridEnabled={isGridEnabled} onToggle={setIsGridEnabled} />
         {isArEnabled && (
           <OpacitySlider opacity={opacity} onOpacityChange={setOpacity} />
         )}
@@ -87,6 +96,7 @@ export default function ARContainer({
               slug={slug}
               stepNo={stepNo}
               opacity={opacity}
+              isGridEnabled={isGridEnabled}
             />
           )}
         </div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { DrawingSettingsProvider } from "@/context/DrawingSettingsContext";
 
 export const metadata: Metadata = {
   title: "Portrait.Coach",
@@ -25,7 +26,9 @@ export default function RootLayout({
         />
         <link rel="canonical" href={baseUrl} />
       </head>
-      <body>{children}</body>
+      <body>
+        <DrawingSettingsProvider>{children}</DrawingSettingsProvider>
+      </body>
     </html>
   );
 }

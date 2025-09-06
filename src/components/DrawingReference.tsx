@@ -12,11 +12,13 @@ export default function DrawingReference({
   stepNo,
   options,
   opacity = 1,
+  isGridEnabled = true,
 }: {
   slug: string;
   stepNo: number;
   options?: Partial<Options>;
   opacity?: number;
+  isGridEnabled?: boolean;
 }) {
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const tutorial = tutorials.find((tutorial) => tutorial.slug === slug)!;
@@ -35,17 +37,25 @@ export default function DrawingReference({
       if (ctx) {
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, image.width, image.height);
-        const stepOptions = {
+        const stepOptions: Options = {
           ...getTutorialStep(slug, stepNo),
           ...options,
         };
+
+        if (!isGridEnabled) {
+          stepOptions.grid = {
+            ...stepOptions.grid,
+            strokeSize: 0,
+          };
+        }
+
         const finalImage = runPipeline(imageData, stepOptions);
         ctx.putImageData(finalImage, 0, 0);
         setImageDataUrl(canvas.toDataURL());
       }
     };
     processImage();
-  }, [slug, stepNo, tutorial.image, options]);
+  }, [slug, stepNo, tutorial.image, options, isGridEnabled]);
   return (
     <div className="border-2 border-gray-200">
       {imageDataUrl && (

@@ -90,11 +90,7 @@ export default function ARContainer({
               slug={slug}
               stepNo={stepNo}
               opacity={opacity}
-              options={{
-                grid: {
-                  strokeSize: isGridEnabled ? 1 : 0,
-                },
-              }}
+              isGridEnabled={isGridEnabled}
             />
           )}
         </div>

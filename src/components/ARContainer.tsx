@@ -6,19 +6,25 @@ import GridSwitch from "./GridSwitch";
 import OpacitySlider from "./OpacitySlider";
 import DrawingReference from "./DrawingReference";
 import { Options } from "@/lib/types";
+import { useDrawingSettings } from "@/context/DrawingSettingsContext";
 
 export default function ARContainer({
   slug,
   stepNo,
   tutorial,
 }: {
-  slug:string;
+  slug: string;
   stepNo: number;
   tutorial: any;
 }) {
-  const [isArEnabled, setIsArEnabled] = useState(false);
-  const [isGridEnabled, setIsGridEnabled] = useState(true);
-  const [opacity, setOpacity] = useState(1);
+  const {
+    isArEnabled,
+    setIsArEnabled,
+    isGridEnabled,
+    setIsGridEnabled,
+    opacity,
+    setOpacity,
+  } = useDrawingSettings();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
 

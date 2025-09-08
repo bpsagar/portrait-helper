@@ -55,30 +55,24 @@ export const createOutline: ImageTransformer = (
     (_, i) => (i * 255) / (options.numberOfShades - 1),
   );
 
-  const filteredData = new Uint8ClampedArray(imageData.data);
-  for (let i = 0; i < filteredData.length; i += 4) {
-    const grayscale = filteredData[i];
+  // Create a new greyscale data array and filter it at the same time.
+  const greyData = new Uint8Array(imageData.width * imageData.height);
+  for (let i = 0; i < greyData.length; i++) {
+    const grayscale = imageData.data[i * 4];
     const shadeIndex = grayShades.findIndex(
       (shade) => Math.abs(shade - grayscale) < 1,
     );
     if (shadeIndex > 3) {
-      // Keep only shades 0, 1, 2, 3. Let's keep 0 as well, it's black.
-      filteredData[i] = 255;
-      filteredData[i + 1] = 255;
-      filteredData[i + 2] = 255;
+      greyData[i] = 255; // white
+    } else {
+      greyData[i] = grayscale;
     }
   }
-  const filteredImageData = new ImageData(
-    filteredData,
-    imageData.width,
-    imageData.height,
-  );
 
-  const image = new Image(
-    filteredImageData.width,
-    filteredImageData.height,
-    { data: filteredImageData.data },
-  );
+  const image = new Image(imageData.width, imageData.height, {
+    data: greyData,
+    colorModel: "GREY",
+  });
 
   const edge = image.cannyEdgeDetector({
     lowThreshold: 10,
@@ -88,7 +82,7 @@ export const createOutline: ImageTransformer = (
 
   // The 'edge' is a binary image (Mask). The edges are 1, the rest is 0.
   // I should make the edges black and the rest white.
-  const edgeData = edge.data;
+  const edgeData = edge.data; // This is a Uint8Array (or similar) of 0s and 1s.
   const rgbaData = new Uint8ClampedArray(imageData.data.length);
   for (let i = 0; i < edgeData.length; i++) {
     const value = edgeData[i] === 1 ? 0 : 255;

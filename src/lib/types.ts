@@ -21,6 +21,8 @@ export interface Options {
   meta: {
     title: string;
   };
+
+  isOutline?: boolean;
 }
 
 export type ImageTransformer = (

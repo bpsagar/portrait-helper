@@ -1,4 +1,5 @@
 import { ImageTransformer, Options } from "./types";
+import { Image } from "image-js";
 
 export const normalizeGrayShades: ImageTransformer = (
   imageData: ImageData,
@@ -43,6 +44,61 @@ export const adjustContrast: ImageTransformer = (
   }
 
   return imageData;
+};
+
+export const createOutline: ImageTransformer = (
+  imageData: ImageData,
+  options: Options,
+) => {
+  const grayShades = Array.from(
+    { length: options.numberOfShades },
+    (_, i) => (i * 255) / (options.numberOfShades - 1),
+  );
+
+  const filteredData = new Uint8ClampedArray(imageData.data);
+  for (let i = 0; i < filteredData.length; i += 4) {
+    const grayscale = filteredData[i];
+    const shadeIndex = grayShades.findIndex(
+      (shade) => Math.abs(shade - grayscale) < 1,
+    );
+    if (shadeIndex > 3) {
+      // Keep only shades 0, 1, 2, 3. Let's keep 0 as well, it's black.
+      filteredData[i] = 255;
+      filteredData[i + 1] = 255;
+      filteredData[i + 2] = 255;
+    }
+  }
+  const filteredImageData = new ImageData(
+    filteredData,
+    imageData.width,
+    imageData.height,
+  );
+
+  const image = new Image(
+    filteredImageData.width,
+    filteredImageData.height,
+    { data: filteredImageData.data },
+  );
+
+  const edge = image.cannyEdgeDetector({
+    lowThreshold: 10,
+    highThreshold: 50,
+    gaussianBlur: 1.2,
+  });
+
+  // The 'edge' is a binary image (Mask). The edges are 1, the rest is 0.
+  // I should make the edges black and the rest white.
+  const edgeData = edge.data;
+  const rgbaData = new Uint8ClampedArray(imageData.data.length);
+  for (let i = 0; i < edgeData.length; i++) {
+    const value = edgeData[i] === 1 ? 0 : 255;
+    rgbaData[i * 4] = value;
+    rgbaData[i * 4 + 1] = value;
+    rgbaData[i * 4 + 2] = value;
+    rgbaData[i * 4 + 3] = 255;
+  }
+
+  return new ImageData(rgbaData, imageData.width, imageData.height);
 };
 
 export const filterDarkerGrays: ImageTransformer = (

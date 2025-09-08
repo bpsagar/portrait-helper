@@ -43,7 +43,7 @@ export default function Page({
       {tutorial && <Navbar name={tutorial.title} />}
       <div className="mt-16">
         <div className="container mx-auto px-4 flex items-center justify-center">
-          {tutorial && stepOptions && (
+          {tutorial && stepOptions && !stepOptions.isOutline && (
             <GrayPalette
               shades={tutorial.options.numberOfShades}
               highlightedIndex={stepOptions.maxGrayShade}

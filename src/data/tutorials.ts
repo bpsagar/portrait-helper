@@ -191,7 +191,30 @@ export const tutorials: Tutorial[] = [
 ];
 
 export const convertTutorialToSteps = (tutorial: Tutorial): Options[] => {
+  const totalCells =
+    (tutorial.image.width / tutorial.options.grid.size) *
+    (tutorial.image.height / tutorial.options.grid.size);
+  const outlineStep: Options = {
+    isOutline: true,
+    maxGrayShade: 3,
+    contrastLevel: tutorial.options.contrastLevel,
+    numberOfShades: tutorial.options.numberOfShades,
+    grid: {
+      ...tutorial.options.grid,
+      strokeSize: 0,
+    },
+    hiddenGridCellColor: tutorial.options.hiddenGridCellColor,
+    showGridCells: Array.from({ length: totalCells }, (_, i) => i),
+    highlightColor: [],
+    highlightCells: [],
+    cellMaxShades: {},
+    meta: {
+      title: "Outline",
+    },
+  };
+
   return [
+    outlineStep,
     ...tutorial.sections.reduce((acc: Options[], section, index): Options[] => {
       const cumulativeShowGridCells = tutorial.sections
         .slice(0, index + 1)

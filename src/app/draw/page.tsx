@@ -3,7 +3,7 @@
 import { useState } from "react";
 import NavigationButtons from "@/components/NavigationButtons";
 import LogoWithTitle from "@/components/LogoWithTitle";
-import { ShadedImage } from "@/components/ShadedImage";
+import ShadedImage from "@/components/ShadedImage";
 
 const STEPS = 8;
 

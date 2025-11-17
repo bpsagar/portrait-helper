@@ -1,5 +1,5 @@
 import Navbar from "@/components/Navbar";
-import NavigationButtons from "@/components/TutorialNavigationButtons";
+import TutorialNavigationButtons from "@/components/TutorialNavigationButtons";
 import {
   convertTutorialToSteps,
   getTutorialStep,
@@ -53,7 +53,7 @@ export default async function Page({
         </div>
         <ARContainer slug={props.slug} stepNo={stepNo} tutorial={tutorial} />
         <div className="container mx-auto px-4">
-          <NavigationButtons
+          <TutorialNavigationButtons
             slug={props.slug}
             title={steps[stepNo - 1].meta.title}
             stepNo={stepNo}

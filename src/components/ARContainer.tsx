@@ -41,9 +41,9 @@ const ARContainer = ({
       )}
       <div className="absolute bottom-4 right-4 z-10">
         <div className="flex items-center space-x-4">
-          <GridSwitch grid={grid} setGrid={setGrid} />
-          <OpacitySlider opacity={opacity} setOpacity={setOpacity} />
-          <ARSwitch ar={ar} setAr={setAr} />
+          <GridSwitch isGridEnabled={grid} onToggle={setGrid} />
+          <OpacitySlider opacity={opacity} onOpacityChange={setOpacity} />
+          <ARSwitch isArEnabled={ar} onToggle={setAr} />
         </div>
       </div>
     </div>

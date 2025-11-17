@@ -9,7 +9,7 @@ interface ShadedImageProps {
 
 const SHADES = [0, 36, 73, 109, 146, 182, 219, 255]; // 8 shades of gray
 
-export function ShadedImage({ imageUrl, step }: ShadedImageProps) {
+export default function ShadedImage({ imageUrl, step }: ShadedImageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {

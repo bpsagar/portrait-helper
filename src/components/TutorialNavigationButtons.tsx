@@ -13,7 +13,7 @@ interface NavigationButtonsProps {
   totalSteps: number;
 }
 
-export default function NavigationButtons({
+export default function TutorialNavigationButtons({
   slug,
   title,
   stepNo,

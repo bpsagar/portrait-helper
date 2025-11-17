@@ -1,5 +1,5 @@
 import Navbar from "@/components/Navbar";
-import NavigationButtons from "@/components/NavigationButtons";
+import NavigationButtons from "@/components/TutorialNavigationButtons";
 import {
   convertTutorialToSteps,
   getTutorialStep,

@@ -4,14 +4,12 @@ import { useState } from "react";
 import NavigationButtons from "@/components/NavigationButtons";
 import LogoWithTitle from "@/components/LogoWithTitle";
 import ShadedImage from "@/components/ShadedImage";
-import { useIsClient } from "@/lib/hooks";
 
 const STEPS = 8;
 
 export default function DrawPage() {
   const [step, setStep] = useState(1);
   const [image, setImage] = useState<string | null>(null);
-  const isClient = useIsClient();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -22,10 +20,6 @@ export default function DrawPage() {
       reader.readAsDataURL(event.target.files[0]);
     }
   };
-
-  if (!isClient) {
-    return null;
-  }
 
   if (!image) {
     return (

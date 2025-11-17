@@ -13,10 +13,17 @@ interface DrawingSettingsContextType {
 
 export const DrawingSettingsContext = createContext<DrawingSettingsContextType | undefined>(undefined);
 
+import { useIsClient } from "@/lib/hooks";
+
 export function DrawingSettingsProvider({ children }: { children: ReactNode }) {
   const [isArEnabled, setIsArEnabled] = useState(false);
   const [isGridEnabled, setIsGridEnabled] = useState(true);
   const [opacity, setOpacity] = useState(1);
+  const isClient = useIsClient();
+
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <DrawingSettingsContext.Provider

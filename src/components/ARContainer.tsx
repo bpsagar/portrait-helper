@@ -1,60 +1,106 @@
 "use client";
-import DrawingReference from "@/components/DrawingReference";
-import { getTutorialStep } from "@/data/tutorials";
-import { Tutorial } from "@/data/types";
-import { Options } from "@/lib/types";
-import { useEffect, useState } from "react";
-import { DrawingSettingsContext } from "@/context/DrawingSettingsContext";
+
+import { useEffect, useRef, useState } from "react";
+import ARSwitch from "./ARSwitch";
 import GridSwitch from "./GridSwitch";
 import OpacitySlider from "./OpacitySlider";
-import ARSwitch from "./ARSwitch";
-
+import DrawingReference from "./DrawingReference";
+import { Options } from "@/lib/types";
 import { useDrawingSettings } from "@/context/DrawingSettingsContext";
 
-const ARContainer = ({
+export default function ARContainer({
   slug,
   stepNo,
   tutorial,
 }: {
   slug: string;
   stepNo: number;
-  tutorial: Tutorial | undefined;
-}) => {
+  tutorial: any;
+}) {
   const {
+    isArEnabled,
+    setIsArEnabled,
     isGridEnabled,
     setIsGridEnabled,
     opacity,
     setOpacity,
-    isArEnabled,
-    setIsArEnabled,
   } = useDrawingSettings();
-  const [stepOptions, setStepOptions] = useState<Options | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (tutorial) {
-      const options = getTutorialStep(slug, stepNo);
-      setStepOptions(options);
+    if (!isArEnabled) {
+      setOpacity(1);
+      return;
     }
-  }, [slug, stepNo, tutorial]);
+
+    setError(null);
+    let stream: MediaStream | null = null;
+
+    const enableAr = async () => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setError(
+          "AR mode is not supported on this browser or device. Please use a modern browser on a secure connection (HTTPS).",
+        );
+        return;
+      }
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+        });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.error("Error accessing camera: ", err);
+        setError(
+          "Error accessing camera. Please make sure you have given permission and are on a secure connection (HTTPS).",
+        );
+      }
+    };
+
+    enableAr();
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [isArEnabled]);
+
   return (
-    <div className="relative">
-      {tutorial && stepOptions && (
-        <DrawingReference
-          slug={slug}
-          stepNo={stepNo}
-          opacity={opacity}
-          isGridEnabled={isGridEnabled}
-        />
-      )}
-      <div className="absolute bottom-4 right-4 z-10">
-        <div className="flex items-center space-x-4">
-          <GridSwitch isGridEnabled={isGridEnabled} onToggle={setIsGridEnabled} />
+    <div>
+      <div className="container mx-auto px-4 flex items-center justify-center gap-4 my-4">
+        <ARSwitch isArEnabled={isArEnabled} onToggle={setIsArEnabled} />
+        <GridSwitch isGridEnabled={isGridEnabled} onToggle={setIsGridEnabled} />
+        {isArEnabled && (
           <OpacitySlider opacity={opacity} onOpacityChange={setOpacity} />
-          <ARSwitch isArEnabled={isArEnabled} onToggle={setIsArEnabled} />
+        )}
+      </div>
+      {error && <div className="text-red-500 text-center pb-4">{error}</div>}
+      <div className="container mx-auto px-4 py-4 flex items-center justify-center mb-24 relative">
+        {isArEnabled && (
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            className="absolute top-0 left-0 w-full h-full object-cover"
+            style={{ zIndex: 0 }}
+          />
+        )}
+        <div style={{ zIndex: 1, position: "relative" }}>
+          {tutorial && (
+            <DrawingReference
+              key={`${slug}-${stepNo}`}
+              slug={slug}
+              stepNo={stepNo}
+              opacity={opacity}
+              isGridEnabled={isGridEnabled}
+            />
+          )}
         </div>
       </div>
     </div>
   );
-};
-
-export default ARContainer;
+}

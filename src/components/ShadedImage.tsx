@@ -23,9 +23,20 @@ export default function ShadedImage({ imageUrl, step }: ShadedImageProps) {
     image.crossOrigin = "anonymous";
     image.src = imageUrl;
     image.onload = () => {
-      canvas.width = image.width;
-      canvas.height = image.height;
-      context.drawImage(image, 0, 0);
+      // Calculate new dimensions to fit device width while maintaining aspect ratio
+      const maxWidth = window.innerWidth * 0.9; // e.g., 90% of viewport width
+      let width = image.width;
+      let height = image.height;
+
+      if (width > maxWidth) {
+        height = height * (maxWidth / width);
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      
+      context.drawImage(image, 0, 0, width, height);
       const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
 
@@ -62,5 +73,5 @@ export default function ShadedImage({ imageUrl, step }: ShadedImageProps) {
     };
   }, [imageUrl, step]);
 
-  return <canvas ref={canvasRef} />;
+  return <canvas ref={canvasRef} className="max-w-full h-auto" />;
 }

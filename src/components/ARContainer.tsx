@@ -9,6 +9,8 @@ import GridSwitch from "./GridSwitch";
 import OpacitySlider from "./OpacitySlider";
 import ARSwitch from "./ARSwitch";
 
+import { useDrawingSettings } from "@/context/DrawingSettingsContext";
+
 const ARContainer = ({
   slug,
   stepNo,
@@ -18,9 +20,14 @@ const ARContainer = ({
   stepNo: number;
   tutorial: Tutorial | undefined;
 }) => {
-  const [grid, setGrid] = useState(false);
-  const [opacity, setOpacity] = useState(1);
-  const [ar, setAr] = useState(false);
+  const {
+    isGridEnabled,
+    setIsGridEnabled,
+    opacity,
+    setOpacity,
+    isArEnabled,
+    setIsArEnabled,
+  } = useDrawingSettings();
   const [stepOptions, setStepOptions] = useState<Options | null>(null);
 
   useEffect(() => {
@@ -36,14 +43,14 @@ const ARContainer = ({
           slug={slug}
           stepNo={stepNo}
           opacity={opacity}
-          isGridEnabled={grid}
+          isGridEnabled={isGridEnabled}
         />
       )}
       <div className="absolute bottom-4 right-4 z-10">
         <div className="flex items-center space-x-4">
-          <GridSwitch isGridEnabled={grid} onToggle={setGrid} />
+          <GridSwitch isGridEnabled={isGridEnabled} onToggle={setIsGridEnabled} />
           <OpacitySlider opacity={opacity} onOpacityChange={setOpacity} />
-          <ARSwitch isArEnabled={ar} onToggle={setAr} />
+          <ARSwitch isArEnabled={isArEnabled} onToggle={setIsArEnabled} />
         </div>
       </div>
     </div>

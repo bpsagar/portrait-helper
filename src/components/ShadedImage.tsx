@@ -5,11 +5,12 @@ import { useEffect, useRef } from "react";
 interface ShadedImageProps {
   imageUrl: string;
   step: number;
+  isGridEnabled?: boolean;
 }
 
 const SHADES = [0, 36, 73, 109, 146, 182, 219, 255]; // 8 shades of gray
 
-export default function ShadedImage({ imageUrl, step }: ShadedImageProps) {
+export default function ShadedImage({ imageUrl, step, isGridEnabled }: ShadedImageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -69,9 +70,36 @@ export default function ShadedImage({ imageUrl, step }: ShadedImageProps) {
         data[i + 1] = newGray;
         data[i + 2] = newGray;
       }
+
+      if (isGridEnabled) {
+        const gridSize = 70;
+        const strokeSize = 1;
+        const strokeColor = 0;
+        for (let i = gridSize; i < canvas.width; i += gridSize) {
+          for (let j = 0; j < canvas.height; j++) {
+            for (let k = 0; k < strokeSize; k++) {
+              const index = (i + k + j * canvas.width) * 4;
+              data[index] = strokeColor;
+              data[index + 1] = strokeColor;
+              data[index + 2] = strokeColor;
+            }
+          }
+        }
+        for (let i = 0; i < canvas.width; i++) {
+          for (let j = gridSize; j < canvas.height; j += gridSize) {
+            for (let k = 0; k < strokeSize; k++) {
+              const index = (i + (j + k) * canvas.width) * 4;
+              data[index] = strokeColor;
+              data[index + 1] = strokeColor;
+              data[index + 2] = strokeColor;
+            }
+          }
+        }
+      }
+
       context.putImageData(imageData, 0, 0);
     };
-  }, [imageUrl, step]);
+  }, [imageUrl, step, isGridEnabled]);
 
   return <canvas ref={canvasRef} className="max-w-full h-auto" />;
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import NavigationButtons from "@/components/NavigationButtons";
 import LogoWithTitle from "@/components/LogoWithTitle";
-import ShadedImage from "@/components/ShadedImage";
+import DrawARContainer from "@/components/DrawARContainer";
 
 const STEPS = 8;
 
@@ -39,7 +39,7 @@ export default function DrawPage() {
   return (
     <div className="flex flex-col items-center">
         <h1 className="text-2xl font-bold mb-4">Shades Drawing Helper</h1>
-        <ShadedImage
+        <DrawARContainer
             imageUrl={image}
             step={step}
         />

@@ -1,5 +1,5 @@
 import Navbar from "@/components/Navbar";
-import NavigationButtons from "@/components/NavigationButtons";
+import TutorialNavigationButtons from "@/components/TutorialNavigationButtons";
 import {
   convertTutorialToSteps,
   getTutorialStep,
@@ -22,20 +22,21 @@ export async function generateStaticParams() {
     .reduce((acc, curr) => [...acc, ...curr], []);
 }
 
-export default function Page({
+export default async function Page({
   params,
 }: {
-  params: { slug: string; stepNo: string };
+  params: Promise<{ slug: string; stepNo: string }>;
 }) {
-  const tutorial = tutorials.find((tutorial) => tutorial.slug === params.slug);
-  const stepNo = +params.stepNo;
+  const props = await params;
+  const tutorial = tutorials.find((tutorial) => tutorial.slug === props.slug);
+  const stepNo = +props.stepNo;
   let steps: Options[] = [];
   let stepOptions: Options | null = null;
 
   let totalSteps = 0;
   if (tutorial) {
     steps = convertTutorialToSteps(tutorial);
-    stepOptions = getTutorialStep(params.slug, stepNo);
+    stepOptions = getTutorialStep(props.slug, stepNo);
     totalSteps = steps.length;
   }
   return (
@@ -50,10 +51,10 @@ export default function Page({
             />
           )}
         </div>
-        <ARContainer slug={params.slug} stepNo={stepNo} tutorial={tutorial} />
+        <ARContainer slug={props.slug} stepNo={stepNo} tutorial={tutorial} />
         <div className="container mx-auto px-4">
-          <NavigationButtons
-            slug={params.slug}
+          <TutorialNavigationButtons
+            slug={props.slug}
             title={steps[stepNo - 1].meta.title}
             stepNo={stepNo}
             totalSteps={totalSteps}

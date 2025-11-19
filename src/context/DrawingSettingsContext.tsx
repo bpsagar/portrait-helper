@@ -11,7 +11,7 @@ interface DrawingSettingsContextType {
   setOpacity: (value: number) => void;
 }
 
-const DrawingSettingsContext = createContext<DrawingSettingsContextType | undefined>(undefined);
+export const DrawingSettingsContext = createContext<DrawingSettingsContextType | undefined>(undefined);
 
 export function DrawingSettingsProvider({ children }: { children: ReactNode }) {
   const [isArEnabled, setIsArEnabled] = useState(false);

@@ -67,7 +67,7 @@ export default function ARContainer({
         stream.getTracks().forEach((track) => track.stop());
       }
     };
-  }, [isArEnabled]);
+  }, [isArEnabled, setOpacity]);
 
   return (
     <div>

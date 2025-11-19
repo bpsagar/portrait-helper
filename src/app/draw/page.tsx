@@ -18,7 +18,7 @@ export default function DrawPage() {
   const [history, setHistory] = useState<ImageHistoryItem[]>([]);
 
   useEffect(() => {
-    const storedHistory = sessionStorage.getItem("imageHistory");
+    const storedHistory = localStorage.getItem("imageHistory");
     if (storedHistory) {
       setHistory(JSON.parse(storedHistory));
     }
@@ -30,7 +30,7 @@ export default function DrawPage() {
 
   const updateHistory = (newHistory: ImageHistoryItem[]) => {
     setHistory(newHistory);
-    sessionStorage.setItem("imageHistory", JSON.stringify(newHistory));
+    localStorage.setItem("imageHistory", JSON.stringify(newHistory));
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {

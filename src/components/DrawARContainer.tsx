@@ -10,9 +10,11 @@ import ShadedImage from "./ShadedImage";
 export default function DrawARContainer({
   imageUrl,
   step,
+  numShades,
 }: {
   imageUrl: string;
   step: number;
+  numShades: number;
 }) {
   const {
     isArEnabled,
@@ -87,11 +89,12 @@ export default function DrawARContainer({
           />
         )}
         <div style={{ zIndex: 1, position: "relative", opacity }}>
-            <ShadedImage
-              imageUrl={imageUrl}
-              step={step}
-              isGridEnabled={isGridEnabled}
-            />
+          <ShadedImage
+            imageUrl={imageUrl}
+            step={step}
+            numShades={numShades}
+            isGridEnabled={isGridEnabled}
+          />
         </div>
       </div>
     </div>

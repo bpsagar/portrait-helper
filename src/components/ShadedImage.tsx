@@ -5,14 +5,14 @@ import { useEffect, useRef, useState } from "react";
 interface ShadedImageProps {
   imageUrl: string;
   step: number;
+  numShades: number;
   isGridEnabled?: boolean;
 }
-
-const SHADES = [0, 36, 73, 109, 146, 182, 219, 255]; // 8 shades of gray
 
 export default function ShadedImage({
   imageUrl,
   step,
+  numShades,
   isGridEnabled,
 }: ShadedImageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -96,27 +96,22 @@ export default function ShadedImage({
     const imageData = offscreenContext.getImageData(0, 0, width, height);
     const data = imageData.data;
 
+    const shades = Array.from({ length: numShades }, (_, i) =>
+      Math.round(255 * (i / (numShades - 1))),
+    );
+
     for (let i = 0; i < data.length; i += 4) {
       const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
-      const nearestShade = SHADES.reduce((prev, curr) => {
+      const nearestShade = shades.reduce((prev, curr) => {
         return Math.abs(curr - gray) < Math.abs(prev - gray) ? curr : prev;
       });
-      const shadeIndex = SHADES.indexOf(nearestShade);
+      const shadeIndex = shades.indexOf(nearestShade);
 
       let newGray = 255;
 
-      if (step >= 1 && step <= 4) {
-        const threshold = 4 - step;
-        if (shadeIndex <= threshold) {
-          newGray = SHADES[threshold];
-        } else if (shadeIndex > threshold && shadeIndex <= 3) {
-          newGray = nearestShade;
-        }
-      } else if (step > 4) {
-        const threshold = step - 1;
-        if (shadeIndex <= threshold) {
-          newGray = nearestShade;
-        }
+      const threshold = step - 1;
+      if (shadeIndex <= threshold) {
+        newGray = nearestShade;
       }
 
       data[i] = newGray;
@@ -152,7 +147,7 @@ export default function ShadedImage({
 
     offscreenContext.putImageData(imageData, 0, 0);
     setProcessedCanvas(offscreenCanvas);
-  }, [image, step, isGridEnabled]);
+  }, [image, step, isGridEnabled, numShades]);
 
   useEffect(() => {
     if (!processedCanvas || !canvasRef.current) return;

@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import NavigationButtons from "@/components/NavigationButtons";
 import LogoWithTitle from "@/components/LogoWithTitle";
 import DrawARContainer from "@/components/DrawARContainer";
-
-const STEPS = 8;
+import Image from "next/image";
 
 interface ImageHistoryItem {
   name: string;
@@ -14,6 +13,7 @@ interface ImageHistoryItem {
 
 export default function DrawPage() {
   const [step, setStep] = useState(1);
+  const [numShades, setNumShades] = useState(8);
   const [image, setImage] = useState<string | null>(null);
   const [history, setHistory] = useState<ImageHistoryItem[]>([]);
 
@@ -23,6 +23,10 @@ export default function DrawPage() {
       setHistory(JSON.parse(storedHistory));
     }
   }, []);
+
+  useEffect(() => {
+    setStep(1);
+  }, [numShades]);
 
   const updateHistory = (newHistory: ImageHistoryItem[]) => {
     setHistory(newHistory);
@@ -60,12 +64,26 @@ export default function DrawPage() {
       <div className="flex flex-col items-center justify-center min-h-screen">
         <LogoWithTitle />
         <h1 className="text-2xl font-bold mb-4">Shades Drawing Helper</h1>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="p-2 border rounded"
-        />
+        <div className="flex flex-col items-center gap-4">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="p-2 border rounded"
+          />
+          <div className="flex items-center gap-2">
+            <label htmlFor="numShades">Number of Shades:</label>
+            <input
+              id="numShades"
+              type="number"
+              value={numShades}
+              onChange={(e) => setNumShades(parseInt(e.target.value, 10))}
+              className="p-2 border rounded w-20"
+              min="2"
+              max="16"
+            />
+          </div>
+        </div>
         {history.length > 0 && (
           <div className="mt-8 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Recent Images</h2>
@@ -73,10 +91,12 @@ export default function DrawPage() {
               {history.map((item, index) => (
                 <li key={index} className="flex items-center justify-between p-2 border-b">
                   <div className="flex items-center gap-2">
-                    <img
+                    <Image
                       src={item.data}
                       alt={item.name}
                       className="w-10 h-10 object-cover rounded"
+                      width={40}
+                      height={40}
                     />
                     <span
                       className="cursor-pointer hover:underline"
@@ -103,8 +123,8 @@ export default function DrawPage() {
   return (
     <div className="flex flex-col items-center">
       <h1 className="text-2xl font-bold mb-4">Shades Drawing Helper</h1>
-      <DrawARContainer imageUrl={image} step={step} />
-      <NavigationButtons step={step} setStep={setStep} maxSteps={STEPS} />
+      <DrawARContainer imageUrl={image} step={step} numShades={numShades} />
+      <NavigationButtons step={step} setStep={setStep} maxSteps={numShades} />
     </div>
   );
 }

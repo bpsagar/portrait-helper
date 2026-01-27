@@ -7,6 +7,7 @@ interface ShadedImageProps {
   step: number;
   numShades: number;
   isGridEnabled?: boolean;
+  contrast?: number;
 }
 
 export default function ShadedImage({
@@ -14,6 +15,7 @@ export default function ShadedImage({
   step,
   numShades,
   isGridEnabled,
+  contrast = 100,
 }: ShadedImageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
@@ -100,9 +102,16 @@ export default function ShadedImage({
       Math.round(255 * (i / (numShades - 1))),
     );
     const midIndex = Math.ceil(numShades / 2);
+    const contrastFactor = contrast / 100;
 
     for (let i = 0; i < data.length; i += 4) {
-      const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      const originalGray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      let gray = originalGray;
+      if (contrast !== 100) {
+        gray = (originalGray - 128) * contrastFactor + 128;
+        gray = Math.max(0, Math.min(255, gray));
+      }
+
       const nearestShade = shades.reduce((prev, curr) => {
         return Math.abs(curr - gray) < Math.abs(prev - gray) ? curr : prev;
       });
@@ -159,7 +168,7 @@ export default function ShadedImage({
 
     offscreenContext.putImageData(imageData, 0, 0);
     setProcessedCanvas(offscreenCanvas);
-  }, [image, step, isGridEnabled, numShades]);
+  }, [image, step, isGridEnabled, numShades, contrast]);
 
   useEffect(() => {
     if (!processedCanvas || !canvasRef.current) return;

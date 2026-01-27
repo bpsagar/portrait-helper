@@ -11,10 +11,12 @@ export default function DrawARContainer({
   imageUrl,
   step,
   numShades,
+  contrast,
 }: {
   imageUrl: string;
   step: number;
   numShades: number;
+  contrast: number;
 }) {
   const {
     isArEnabled,
@@ -94,6 +96,7 @@ export default function DrawARContainer({
             step={step}
             numShades={numShades}
             isGridEnabled={isGridEnabled}
+            contrast={contrast}
           />
         </div>
       </div>

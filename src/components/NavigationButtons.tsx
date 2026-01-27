@@ -47,6 +47,7 @@ export default function NavigationButtons({
           <button
             onClick={() => handleNavigation(step - 1)}
             disabled={isFirstStep}
+            aria-label="left-arrow"
             className={`flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 ${
               isFirstStep
                 ? "text-slate-400 cursor-not-allowed"
@@ -65,6 +66,7 @@ export default function NavigationButtons({
           <button
             onClick={() => handleNavigation(step + 1)}
             disabled={isLastStep}
+            aria-label="right-arrow"
             className={`flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 ${
               isLastStep
                 ? "text-slate-400 cursor-not-allowed"

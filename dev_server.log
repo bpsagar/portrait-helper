@@ -1,0 +1,17 @@
+
+> portrait-coach@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.5.6
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.2:3000
+
+ ✓ Starting...
+ ✓ Ready in 3.8s
+ ○ Compiling /draw ...
+ ✓ Compiled /draw in 9.7s (677 modules)
+ ✓ Compiled in 1311ms (265 modules)
+ GET /draw 200 in 11118ms
+ ✓ Compiled in 536ms (677 modules)
+ GET /draw 200 in 372ms
+ GET /draw 200 in 87ms

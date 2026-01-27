@@ -99,6 +99,7 @@ export default function ShadedImage({
     const shades = Array.from({ length: numShades }, (_, i) =>
       Math.round(255 * (i / (numShades - 1))),
     );
+    const midIndex = Math.ceil(numShades / 2);
 
     for (let i = 0; i < data.length; i += 4) {
       const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
@@ -109,9 +110,20 @@ export default function ShadedImage({
 
       let newGray = 255;
 
-      const threshold = step - 1;
-      if (shadeIndex <= threshold) {
-        newGray = nearestShade;
+      if (step <= midIndex) {
+        const darkThreshold = midIndex - step;
+        if (shadeIndex < midIndex) {
+          if (shadeIndex <= darkThreshold) {
+            newGray = shades[darkThreshold];
+          } else {
+            newGray = nearestShade;
+          }
+        }
+      } else {
+        const overallThreshold = step - 1;
+        if (shadeIndex <= overallThreshold) {
+          newGray = nearestShade;
+        }
       }
 
       data[i] = newGray;

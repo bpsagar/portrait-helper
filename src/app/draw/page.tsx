@@ -6,6 +6,8 @@ import LogoWithTitle from "@/components/LogoWithTitle";
 import DrawARContainer from "@/components/DrawARContainer";
 import ShadedImage from "@/components/ShadedImage";
 import Image from "next/image";
+import LZString from "lz-string";
+import { downscaleImage } from "@/lib/image-utils";
 
 interface ImageHistoryItem {
   name: string;
@@ -19,13 +21,59 @@ export default function DrawPage() {
   const [image, setImage] = useState<string | null>(null);
   const [showSteps, setShowSteps] = useState(false);
   const [history, setHistory] = useState<ImageHistoryItem[]>([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     const storedHistory = localStorage.getItem("imageHistory");
     if (storedHistory) {
       setHistory(JSON.parse(storedHistory));
     }
+
+    const params = new URLSearchParams(window.location.search);
+    const compressedImage = params.get("i");
+    const s = params.get("s");
+    const c = params.get("c");
+
+    if (compressedImage) {
+      try {
+        const decompressed = LZString.decompressFromEncodedURIComponent(compressedImage);
+        if (decompressed) {
+          setImage(decompressed);
+          setShowSteps(true);
+        }
+      } catch (e) {
+        console.error("Failed to decompress image from URL", e);
+      }
+    }
+    if (s) setNumShades(Math.max(2, Math.min(16, parseInt(s) || 8)));
+    if (c) setContrast(Math.max(0, Math.min(200, parseInt(c) || 100)));
+
+    setIsInitialLoad(false);
   }, []);
+
+  useEffect(() => {
+    if (isInitialLoad) return;
+
+    const updateUrl = () => {
+      try {
+        const params = new URLSearchParams();
+        if (image) {
+          const compressed = LZString.compressToEncodedURIComponent(image);
+          params.set("i", compressed);
+        }
+        params.set("s", numShades.toString());
+        params.set("c", contrast.toString());
+
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.replaceState({}, "", newUrl);
+      } catch (err) {
+        console.error("Error updating URL:", err);
+      }
+    };
+
+    const timeoutId = setTimeout(updateUrl, 500);
+    return () => clearTimeout(timeoutId);
+  }, [image, numShades, contrast, isInitialLoad]);
 
   useEffect(() => {
     setStep(1);
@@ -40,21 +88,33 @@ export default function DrawPage() {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const newImage: ImageHistoryItem = {
-          name: file.name,
-          data: e.target?.result as string,
-        };
-        setImage(newImage.data);
-        const newHistory = [newImage, ...history.filter(h => h.name !== newImage.name)];
-        updateHistory(newHistory);
+      reader.onload = async (e) => {
+        const rawData = e.target?.result as string;
+        try {
+          const downscaledData = await downscaleImage(rawData, 300, 300);
+          const newImage: ImageHistoryItem = {
+            name: file.name,
+            data: downscaledData,
+          };
+          setImage(newImage.data);
+          const newHistory = [newImage, ...history.filter(h => h.name !== newImage.name)];
+          updateHistory(newHistory);
+        } catch (err) {
+          console.error("Error processing image:", err);
+        }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSelectFromHistory = (selectedImage: ImageHistoryItem) => {
-    setImage(selectedImage.data);
+  const handleSelectFromHistory = async (selectedImage: ImageHistoryItem) => {
+    try {
+      const downscaledData = await downscaleImage(selectedImage.data, 300, 300);
+      setImage(downscaledData);
+    } catch (err) {
+      console.error("Error processing history image:", err);
+      setImage(selectedImage.data);
+    }
   };
 
   const handleDeleteFromHistory = (imageToDelete: ImageHistoryItem) => {

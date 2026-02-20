@@ -6,6 +6,7 @@ import LogoWithTitle from "@/components/LogoWithTitle";
 import DrawARContainer from "@/components/DrawARContainer";
 import ShadedImage from "@/components/ShadedImage";
 import Image from "next/image";
+import LZString from "lz-string";
 
 interface ImageHistoryItem {
   name: string;
@@ -17,15 +18,70 @@ export default function DrawPage() {
   const [numShades, setNumShades] = useState(8);
   const [contrast, setContrast] = useState(100);
   const [image, setImage] = useState<string | null>(null);
+  const [imageUrlInput, setImageUrlInput] = useState("");
   const [showSteps, setShowSteps] = useState(false);
   const [history, setHistory] = useState<ImageHistoryItem[]>([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     const storedHistory = localStorage.getItem("imageHistory");
     if (storedHistory) {
       setHistory(JSON.parse(storedHistory));
     }
+
+    const params = new URLSearchParams(window.location.search);
+    const config = params.get("q");
+
+    if (config) {
+      try {
+        const decoded = LZString.decompressFromEncodedURIComponent(config);
+        if (decoded) {
+          const { i, s, c } = JSON.parse(decoded);
+          if (i) {
+            setImage(i);
+            setImageUrlInput(i);
+            setShowSteps(true);
+          }
+          if (s) setNumShades(Math.max(2, Math.min(16, parseInt(s) || 8)));
+          if (c) setContrast(Math.max(0, Math.min(200, parseInt(c) || 100)));
+        }
+      } catch (e) {
+        console.error("Failed to decode config from URL", e);
+      }
+    }
+
+    setIsInitialLoad(false);
   }, []);
+
+  useEffect(() => {
+    if (isInitialLoad) return;
+
+    const updateUrl = () => {
+      try {
+        const params = new URLSearchParams();
+        const configObj: any = {
+          s: numShades,
+          c: contrast,
+        };
+        if (image && !image.startsWith("data:")) {
+          configObj.i = image;
+        }
+
+        const compressed = LZString.compressToEncodedURIComponent(
+          JSON.stringify(configObj)
+        );
+        params.set("q", compressed);
+
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.replaceState({}, "", newUrl);
+      } catch (err) {
+        console.error("Error updating URL:", err);
+      }
+    };
+
+    const timeoutId = setTimeout(updateUrl, 500);
+    return () => clearTimeout(timeoutId);
+  }, [image, numShades, contrast, isInitialLoad]);
 
   useEffect(() => {
     setStep(1);
@@ -41,11 +97,13 @@ export default function DrawPage() {
       const file = event.target.files[0];
       const reader = new FileReader();
       reader.onload = (e) => {
+        const rawData = e.target?.result as string;
         const newImage: ImageHistoryItem = {
           name: file.name,
-          data: e.target?.result as string,
+          data: rawData,
         };
         setImage(newImage.data);
+        setImageUrlInput("");
         const newHistory = [newImage, ...history.filter(h => h.name !== newImage.name)];
         updateHistory(newHistory);
       };
@@ -53,8 +111,16 @@ export default function DrawPage() {
     }
   };
 
+  const handleImageUrlSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (imageUrlInput.trim()) {
+      setImage(imageUrlInput.trim());
+    }
+  };
+
   const handleSelectFromHistory = (selectedImage: ImageHistoryItem) => {
     setImage(selectedImage.data);
+    setImageUrlInput("");
   };
 
   const handleDeleteFromHistory = (imageToDelete: ImageHistoryItem) => {
@@ -78,12 +144,45 @@ export default function DrawPage() {
                 </span>
                 Select Image
               </h2>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-              />
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Upload from your device
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                    <div className="w-full border-t border-gray-200"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-gray-500">Or use a URL (Shareable)</span>
+                  </div>
+                </div>
+
+                <form onSubmit={handleImageUrlSubmit} className="flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="https://example.com/image.jpg"
+                    value={imageUrlInput}
+                    onChange={(e) => setImageUrlInput(e.target.value)}
+                    className="flex-1 min-w-0 block w-full px-3 py-2 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                  <button
+                    type="submit"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Load
+                  </button>
+                </form>
+              </div>
 
               {history.length > 0 && (
                 <div className="mt-4">

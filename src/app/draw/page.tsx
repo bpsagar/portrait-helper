@@ -6,6 +6,7 @@ import LogoWithTitle from "@/components/LogoWithTitle";
 import DrawARContainer from "@/components/DrawARContainer";
 import ShadedImage from "@/components/ShadedImage";
 import Image from "next/image";
+import LZString from "lz-string";
 
 interface ImageHistoryItem {
   name: string;
@@ -29,17 +30,25 @@ export default function DrawPage() {
     }
 
     const params = new URLSearchParams(window.location.search);
-    const imageUrl = params.get("i");
-    const s = params.get("s");
-    const c = params.get("c");
+    const config = params.get("q");
 
-    if (imageUrl) {
-      setImage(imageUrl);
-      setImageUrlInput(imageUrl);
-      setShowSteps(true);
+    if (config) {
+      try {
+        const decoded = LZString.decompressFromEncodedURIComponent(config);
+        if (decoded) {
+          const { i, s, c } = JSON.parse(decoded);
+          if (i) {
+            setImage(i);
+            setImageUrlInput(i);
+            setShowSteps(true);
+          }
+          if (s) setNumShades(Math.max(2, Math.min(16, parseInt(s) || 8)));
+          if (c) setContrast(Math.max(0, Math.min(200, parseInt(c) || 100)));
+        }
+      } catch (e) {
+        console.error("Failed to decode config from URL", e);
+      }
     }
-    if (s) setNumShades(Math.max(2, Math.min(16, parseInt(s) || 8)));
-    if (c) setContrast(Math.max(0, Math.min(200, parseInt(c) || 100)));
 
     setIsInitialLoad(false);
   }, []);
@@ -50,11 +59,18 @@ export default function DrawPage() {
     const updateUrl = () => {
       try {
         const params = new URLSearchParams();
+        const configObj: any = {
+          s: numShades,
+          c: contrast,
+        };
         if (image && !image.startsWith("data:")) {
-          params.set("i", image);
+          configObj.i = image;
         }
-        params.set("s", numShades.toString());
-        params.set("c", contrast.toString());
+
+        const compressed = LZString.compressToEncodedURIComponent(
+          JSON.stringify(configObj)
+        );
+        params.set("q", compressed);
 
         const newUrl = `${window.location.pathname}?${params.toString()}`;
         window.history.replaceState({}, "", newUrl);

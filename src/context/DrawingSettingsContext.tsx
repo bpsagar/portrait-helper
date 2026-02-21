@@ -5,8 +5,8 @@ import { createContext, useContext, useState, ReactNode } from "react";
 interface DrawingSettingsContextType {
   isArEnabled: boolean;
   setIsArEnabled: (value: boolean) => void;
-  isGridEnabled: boolean;
-  setIsGridEnabled: (value: boolean) => void;
+  isColorModeEnabled: boolean;
+  setIsColorModeEnabled: (value: boolean) => void;
   opacity: number;
   setOpacity: (value: number) => void;
 }
@@ -15,7 +15,7 @@ export const DrawingSettingsContext = createContext<DrawingSettingsContextType |
 
 export function DrawingSettingsProvider({ children }: { children: ReactNode }) {
   const [isArEnabled, setIsArEnabled] = useState(false);
-  const [isGridEnabled, setIsGridEnabled] = useState(true);
+  const [isColorModeEnabled, setIsColorModeEnabled] = useState(false);
   const [opacity, setOpacity] = useState(1);
 
   return (
@@ -23,8 +23,8 @@ export function DrawingSettingsProvider({ children }: { children: ReactNode }) {
       value={{
         isArEnabled,
         setIsArEnabled,
-        isGridEnabled,
-        setIsGridEnabled,
+        isColorModeEnabled,
+        setIsColorModeEnabled,
         opacity,
         setOpacity,
       }}

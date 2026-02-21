@@ -6,17 +6,37 @@ interface ShadedImageProps {
   imageUrl: string;
   step: number;
   numShades: number;
-  isGridEnabled?: boolean;
   contrast?: number;
+  isColorModeEnabled?: boolean;
 }
+
+const SHADE_COLORS = [
+  [255, 0, 0],     // Red
+  [0, 0, 255],     // Blue
+  [0, 128, 0],     // Green
+  [255, 165, 0],   // Orange
+  [128, 0, 128],   // Purple
+  [0, 255, 255],   // Cyan
+  [255, 0, 255],   // Magenta
+  [0, 255, 0],     // Lime
+  [255, 192, 203], // Pink
+  [0, 128, 128],   // Teal
+  [230, 190, 255], // Lavender
+  [170, 110, 40],  // Brown
+  [128, 128, 0],   // Olive
+  [128, 0, 0],     // Maroon
+  [0, 0, 128],     // Navy
+  [255, 215, 0],   // Gold
+];
 
 export default function ShadedImage({
   imageUrl,
   step,
   numShades,
-  isGridEnabled,
   contrast = 100,
+  isColorModeEnabled = false,
 }: ShadedImageProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [processedCanvas, setProcessedCanvas] =
@@ -63,6 +83,36 @@ export default function ShadedImage({
   const handleTouchEnd = () => {
     setIsPanning(false);
   };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        const activeElement = document.activeElement;
+        const isInput =
+          activeElement instanceof HTMLInputElement ||
+          activeElement instanceof HTMLTextAreaElement ||
+          (activeElement as HTMLElement)?.isContentEditable;
+
+        if (!isInput) {
+          e.preventDefault();
+          toggleFullscreen();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const img = new Image();
@@ -117,58 +167,45 @@ export default function ShadedImage({
       });
       const shadeIndex = shades.indexOf(nearestShade);
 
-      let newGray = 255;
-
+      let finalShadeIndex = -1;
       if (step <= midIndex) {
         const darkThreshold = midIndex - step;
         if (shadeIndex < midIndex) {
           if (shadeIndex <= darkThreshold) {
-            newGray = shades[darkThreshold];
+            finalShadeIndex = darkThreshold;
           } else {
-            newGray = nearestShade;
+            finalShadeIndex = shadeIndex;
           }
         }
       } else {
         const overallThreshold = step - 1;
         if (shadeIndex <= overallThreshold) {
-          newGray = nearestShade;
+          finalShadeIndex = shadeIndex;
         }
       }
 
-      data[i] = newGray;
-      data[i + 1] = newGray;
-      data[i + 2] = newGray;
-    }
-
-    if (isGridEnabled) {
-      const gridSize = 70;
-      const strokeSize = 1;
-      const strokeColor = 0;
-      for (let i = gridSize; i < width; i += gridSize) {
-        for (let j = 0; j < height; j++) {
-          for (let k = 0; k < strokeSize; k++) {
-            const index = (i + k + j * width) * 4;
-            data[index] = strokeColor;
-            data[index + 1] = strokeColor;
-            data[index + 2] = strokeColor;
-          }
+      if (finalShadeIndex !== -1) {
+        if (isColorModeEnabled) {
+          const color = SHADE_COLORS[finalShadeIndex % SHADE_COLORS.length];
+          data[i] = color[0];
+          data[i + 1] = color[1];
+          data[i + 2] = color[2];
+        } else {
+          const grayValue = shades[finalShadeIndex];
+          data[i] = grayValue;
+          data[i + 1] = grayValue;
+          data[i + 2] = grayValue;
         }
-      }
-      for (let i = 0; i < width; i++) {
-        for (let j = gridSize; j < height; j += gridSize) {
-          for (let k = 0; k < strokeSize; k++) {
-            const index = (i + (j + k) * width) * 4;
-            data[index] = strokeColor;
-            data[index + 1] = strokeColor;
-            data[index + 2] = strokeColor;
-          }
-        }
+      } else {
+        data[i] = 255;
+        data[i + 1] = 255;
+        data[i + 2] = 255;
       }
     }
 
     offscreenContext.putImageData(imageData, 0, 0);
     setProcessedCanvas(offscreenCanvas);
-  }, [image, step, isGridEnabled, numShades, contrast]);
+  }, [image, step, numShades, contrast, isColorModeEnabled]);
 
   useEffect(() => {
     if (!processedCanvas || !canvasRef.current) return;
@@ -189,7 +226,7 @@ export default function ShadedImage({
   }, [processedCanvas, pan, zoom]);
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="shaded-image-container relative bg-white flex items-center justify-center">
       <canvas
         ref={canvasRef}
         className="max-w-full h-auto"
@@ -214,8 +251,25 @@ export default function ShadedImage({
         >
           -
         </button>
+        <button
+          onClick={toggleFullscreen}
+          className="w-8 h-8 bg-gray-700 text-white rounded-full flex items-center justify-center"
+          aria-label="Toggle Fullscreen"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </button>
       </div>
     </div>
   );
 }
-

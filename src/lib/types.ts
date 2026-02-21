@@ -2,11 +2,6 @@ export interface Options {
   // setup
   contrastLevel: number;
   numberOfShades: number;
-  grid: {
-    size: number;
-    strokeSize: number;
-    strokeColor: number;
-  };
   hiddenGridCellColor: number;
 
   // steps

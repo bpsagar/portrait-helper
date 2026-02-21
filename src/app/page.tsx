@@ -9,7 +9,6 @@ import Image from "next/image";
 export default function Page() {
   const [step, setStep] = useState(1);
   const focusArea = [
-    "Break the portrait down into smaller sections with a grid. This ensures you minimize irreversible mistakes that ruin hours of effort.",
     "We give you hyper-focused suggestions, helping you get the proportions and alignment right for your drawing.",
   ];
   const findTheShade = [
@@ -47,13 +46,6 @@ export default function Page() {
                 <DrawingReference
                   slug="messi"
                   stepNo={step}
-                  options={{
-                    grid: {
-                      size: 70,
-                      strokeSize: 0,
-                      strokeColor: 1,
-                    },
-                  }}
                 />
               </div>
             </div>

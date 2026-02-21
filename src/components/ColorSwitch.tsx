@@ -1,23 +1,24 @@
 "use client";
 
-interface GridSwitchProps {
-  isGridEnabled: boolean;
+interface ColorSwitchProps {
+  isColorModeEnabled: boolean;
   onToggle: (isEnabled: boolean) => void;
 }
 
-export default function GridSwitch({ isGridEnabled, onToggle }: GridSwitchProps) {
+export default function ColorSwitch({ isColorModeEnabled, onToggle }: ColorSwitchProps) {
   return (
     <div className="flex items-center">
-      <span className="mr-2 text-gray-700">Grid</span>
+      <span className="mr-2 text-gray-700">Color Mode</span>
       <button
-        onClick={() => onToggle(!isGridEnabled)}
+        onClick={() => onToggle(!isColorModeEnabled)}
         className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-200 ease-in-out ${
-          isGridEnabled ? "bg-blue-500" : "bg-gray-300"
+          isColorModeEnabled ? "bg-blue-500" : "bg-gray-300"
         }`}
+        aria-label="Toggle Color Mode"
       >
         <span
           className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-200 ease-in-out ${
-            isGridEnabled ? "translate-x-6" : "translate-x-1"
+            isColorModeEnabled ? "translate-x-6" : "translate-x-1"
           }`}
         />
       </button>

@@ -13,11 +13,6 @@ export const tutorials: Tutorial[] = [
     options: {
       contrastLevel: 20,
       numberOfShades: 8,
-      grid: {
-        size: 70,
-        strokeSize: 1,
-        strokeColor: 200,
-      },
       hiddenGridCellColor: 255,
     },
     sections: [
@@ -67,11 +62,6 @@ export const tutorials: Tutorial[] = [
     options: {
       contrastLevel: 20,
       numberOfShades: 8,
-      grid: {
-        size: 70,
-        strokeSize: 1,
-        strokeColor: 200,
-      },
       hiddenGridCellColor: 255,
     },
     sections: [
@@ -116,11 +106,6 @@ export const tutorials: Tutorial[] = [
     options: {
       contrastLevel: 0,
       numberOfShades: 8,
-      grid: {
-        size: 70,
-        strokeSize: 1,
-        strokeColor: 200,
-      },
       hiddenGridCellColor: 255,
     },
     sections: [
@@ -173,11 +158,6 @@ export const tutorials: Tutorial[] = [
     options: {
       contrastLevel: 10,
       numberOfShades: 8,
-      grid: {
-        size: 70,
-        strokeSize: 1,
-        strokeColor: 200,
-      },
       hiddenGridCellColor: 255,
     },
     sections: [
@@ -212,7 +192,6 @@ export const convertTutorialToSteps = (tutorial: Tutorial): Options[] => {
           (maxGrayShade): Options => ({
             contrastLevel: tutorial.options.contrastLevel,
             numberOfShades: tutorial.options.numberOfShades,
-            grid: tutorial.options.grid,
             hiddenGridCellColor: tutorial.options.hiddenGridCellColor,
             showGridCells: cumulativeShowGridCells,
             maxGrayShade,
@@ -240,7 +219,6 @@ export const convertTutorialToSteps = (tutorial: Tutorial): Options[] => {
         return {
           contrastLevel: tutorial.options.contrastLevel,
           numberOfShades: tutorial.options.numberOfShades,
-          grid: tutorial.options.grid,
           hiddenGridCellColor: tutorial.options.hiddenGridCellColor,
           showGridCells: tutorial.sections.flatMap((s) => s.showGridCells),
           maxGrayShade,

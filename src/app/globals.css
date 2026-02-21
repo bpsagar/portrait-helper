@@ -104,4 +104,11 @@ h2 {
   .bg-footer-black {
     background-color: #444444;
   }
+
+  .shaded-image-container:fullscreen {
+    background-color: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }

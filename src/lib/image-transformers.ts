@@ -54,7 +54,7 @@ export const filterDarkerGrays: ImageTransformer = (
     (_, i) => (i * 255) / (options.numberOfShades - 1),
   );
   const data = imageData.data;
-  const gridSize = options.grid.size;
+  const gridSize = 70;
   const numberOfCellsInRow = Math.round(imageData.width / gridSize);
 
   for (let y = 0; y < imageData.height; y++) {
@@ -73,37 +73,6 @@ export const filterDarkerGrays: ImageTransformer = (
         data[i] = 255;
         data[i + 1] = 255;
         data[i + 2] = 255;
-      }
-    }
-  }
-  return imageData;
-};
-
-export const addGridToImage: ImageTransformer = (
-  imageData: ImageData,
-  options: Options,
-) => {
-  const gridSize = options.grid.size;
-  const strokeSize = options.grid.strokeSize;
-  const strokeColor = options.grid.strokeColor;
-  const data = imageData.data;
-  for (let i = gridSize; i < imageData.width; i += gridSize) {
-    for (let j = 0; j < imageData.height; j++) {
-      for (let k = 0; k < strokeSize; k++) {
-        const index = (i + k + j * imageData.width) * 4;
-        data[index] = strokeColor;
-        data[index + 1] = strokeColor;
-        data[index + 2] = strokeColor;
-      }
-    }
-  }
-  for (let i = 0; i < imageData.width; i++) {
-    for (let j = gridSize; j < imageData.height; j += gridSize) {
-      for (let k = 0; k < strokeSize; k++) {
-        const index = (i + (j + k) * imageData.width) * 4;
-        data[index] = strokeColor;
-        data[index + 1] = strokeColor;
-        data[index + 2] = strokeColor;
       }
     }
   }
@@ -129,7 +98,7 @@ const getRemainingCells = (
 
 export const showGridCells = (imageData: ImageData, options: Options) => {
   const data = imageData.data;
-  const gridSize = options.grid.size;
+  const gridSize = 70;
   const gridCells = getRemainingCells(
     imageData,
     gridSize,
@@ -149,74 +118,5 @@ export const showGridCells = (imageData: ImageData, options: Options) => {
       }
     }
   }
-  return imageData;
-};
-
-export const highlightGridCells: ImageTransformer = (
-  imageData: ImageData,
-  options: Options,
-) => {
-  const data = imageData.data;
-  const gridSize = options.grid.size;
-  const strokeSize = options.grid.strokeSize;
-  const highlightColor = options.highlightColor || [255, 0, 0]; // Default to red if not specified
-  const numberOfCellsInRow = Math.round(imageData.width / gridSize);
-
-  const highlightedCells = new Set(options.highlightCells);
-
-  options.highlightCells.forEach((cell) => {
-    const x = (cell % numberOfCellsInRow) * gridSize;
-    const y = Math.floor(cell / numberOfCellsInRow) * gridSize;
-
-    // Draw top border if the cell above is not highlighted
-    if (!highlightedCells.has(cell - numberOfCellsInRow)) {
-      for (let i = x; i < x + gridSize; i++) {
-        for (let j = 0; j < strokeSize; j++) {
-          const topIndex = (i + (y + j) * imageData.width) * 4;
-          data[topIndex] = highlightColor[0];
-          data[topIndex + 1] = highlightColor[1];
-          data[topIndex + 2] = highlightColor[2];
-        }
-      }
-    }
-
-    // Draw bottom border if the cell below is not highlighted
-    if (!highlightedCells.has(cell + numberOfCellsInRow)) {
-      for (let i = x; i < x + gridSize; i++) {
-        for (let j = 0; j < strokeSize; j++) {
-          const bottomIndex =
-            (i + (y + gridSize - j - 1) * imageData.width) * 4;
-          data[bottomIndex] = highlightColor[0];
-          data[bottomIndex + 1] = highlightColor[1];
-          data[bottomIndex + 2] = highlightColor[2];
-        }
-      }
-    }
-
-    // Draw left border if the cell to the left is not highlighted
-    if (!highlightedCells.has(cell - 1)) {
-      for (let i = y; i < y + gridSize; i++) {
-        for (let j = 0; j < strokeSize; j++) {
-          const leftIndex = (x + j + i * imageData.width) * 4;
-          data[leftIndex] = highlightColor[0];
-          data[leftIndex + 1] = highlightColor[1];
-          data[leftIndex + 2] = highlightColor[2];
-        }
-      }
-    }
-
-    // Draw right border if the cell to the right is not highlighted
-    if (!highlightedCells.has(cell + 1)) {
-      for (let i = y; i < y + gridSize; i++) {
-        for (let j = 0; j < strokeSize; j++) {
-          const rightIndex = (x + gridSize - j - 1 + i * imageData.width) * 4;
-          data[rightIndex] = highlightColor[0];
-          data[rightIndex + 1] = highlightColor[1];
-          data[rightIndex + 2] = highlightColor[2];
-        }
-      }
-    }
-  });
-
   return imageData;
 };

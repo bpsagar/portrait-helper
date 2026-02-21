@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import ARSwitch from "./ARSwitch";
-import GridSwitch from "./GridSwitch";
+import ColorSwitch from "./ColorSwitch";
 import OpacitySlider from "./OpacitySlider";
 import { useDrawingSettings } from "@/context/DrawingSettingsContext";
 import ShadedImage from "./ShadedImage";
@@ -21,8 +21,8 @@ export default function DrawARContainer({
   const {
     isArEnabled,
     setIsArEnabled,
-    isGridEnabled,
-    setIsGridEnabled,
+    isColorModeEnabled,
+    setIsColorModeEnabled,
     opacity,
     setOpacity,
   } = useDrawingSettings();
@@ -74,7 +74,7 @@ export default function DrawARContainer({
     <div>
       <div className="container mx-auto px-4 flex items-center justify-center gap-4 my-4">
         <ARSwitch isArEnabled={isArEnabled} onToggle={setIsArEnabled} />
-        <GridSwitch isGridEnabled={isGridEnabled} onToggle={setIsGridEnabled} />
+        <ColorSwitch isColorModeEnabled={isColorModeEnabled} onToggle={setIsColorModeEnabled} />
         {isArEnabled && (
           <OpacitySlider opacity={opacity} onOpacityChange={setOpacity} />
         )}
@@ -95,8 +95,8 @@ export default function DrawARContainer({
             imageUrl={imageUrl}
             step={step}
             numShades={numShades}
-            isGridEnabled={isGridEnabled}
             contrast={contrast}
+            isColorModeEnabled={isColorModeEnabled}
           />
         </div>
       </div>

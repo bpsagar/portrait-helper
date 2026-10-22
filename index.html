@@ -30,9 +30,9 @@
 <!-- ───────── Empty state ───────── -->
 <main id="welcome" class="welcome">
   <div class="welcome-copy">
-    <p class="eyebrow">A realistic portrait in ten small steps</p>
+    <p class="eyebrow">Portrait drawing, step by step</p>
     <h1>Draw the shadows first.<br><em>The face follows.</em></h1>
-    <p class="lede">Drop in a reference photo. Portrait Coach breaks it into ten small steps, from a few straight lines to a finished, realistic drawing. Each step shows you what your paper should look like next.</p>
+    <p class="lede">Drop in a reference photo and step from a few straight lines to a finished drawing.</p>
 
     <label class="drop" id="drop" tabindex="0">
       <span class="drop-title">Drop a photo here</span>
@@ -53,23 +53,12 @@
       <p class="eyebrow">Your recent photos</p>
       <div class="samples small" id="recent"></div>
     </div>
-    <ol class="how">
-      <li><b>Lines.</b> Outline the head and the shadow shapes with light, straight lines.</li>
-      <li><b>Tones.</b> Fill the shadows, then the darkest darks, then the half-tones.</li>
-      <li><b>Finish.</b> Blend smooth, refine the tones, add the details, lift the highlights.</li>
-    </ol>
-    <p class="kit"><b>You'll need</b> 2H, B and 6B pencils, a tissue or blending stump, and a kneaded eraser.</p>
   </div>
 </main>
 
 <!-- ───────── Studio ───────── -->
 <div id="studio" class="studio" hidden>
 
-  <aside class="scale" aria-label="Value scale">
-    <h2 class="rail-title" id="railTitle">Your steps</h2>
-    <ol id="scaleList" class="scale-list"></ol>
-    <p class="rail-foot" id="railFoot">Tap any step to jump to it.</p>
-  </aside>
 
   <section class="stage-wrap">
     <div class="stage" id="stage" aria-label="Reference">
@@ -95,18 +84,12 @@
       </div>
     </div>
 
-    <div class="coach" aria-live="polite">
-      <div class="coach-head">
-        <p class="pass-no" id="passNo"></p>
-        <h2 id="passTitle"></h2>
-      </div>
-      <p id="passText" class="pass-text"></p>
-      <div class="coach-nav">
-        <button class="btn ghost round" id="prev" type="button" aria-label="Previous pass">←</button>
-        <div class="progress" id="progress" role="tablist" aria-label="Passes"></div>
-        <button class="btn primary" id="next" type="button">Next pass →</button>
-      </div>
-    </div>
+    <nav class="coach" aria-label="Steps">
+      <button class="btn ghost round" id="prev" type="button" aria-label="Previous step">←</button>
+      <div class="progress" id="progress" role="tablist" aria-label="Steps"></div>
+      <span class="step-no" id="stepNo" aria-live="polite"></span>
+      <button class="btn ghost round" id="next" type="button" aria-label="Next step">→</button>
+    </nav>
   </section>
 
   <aside class="panel" id="panel" aria-label="Setup">
@@ -114,7 +97,7 @@
       <h3>Simplify</h3>
       <label class="field">
         <span>Tones <output id="valuesOut"></output></span>
-        <input type="range" id="values" min="3" max="8" step="1">
+        <input type="range" id="values" min="3" max="10" step="1">
       </label>
       <label class="field">
         <span>Contrast <output id="contrastOut"></output></span>
@@ -155,13 +138,12 @@
     </section>
 
     <section>
-      <h3>Paper &amp; pencil</h3>
+      <h3>Paper</h3>
       <div class="seg" id="paperSeg" role="radiogroup" aria-label="Paper tone">
         <button type="button" role="radio" data-paper="warm">Warm</button>
         <button type="button" role="radio" data-paper="cool">Cool</button>
         <button type="button" role="radio" data-paper="gray">Mid-gray</button>
       </div>
-      <label class="check"><input type="checkbox" id="leads" checked> <span>Suggest pencil grades</span></label>
     </section>
 
     <section class="panel-foot">

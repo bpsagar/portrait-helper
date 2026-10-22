@@ -25,6 +25,7 @@
   const L = LINE_PASSES.length;
   const FINISH = [
     { kind: "blend", name: "Blend the tones", tool: "Tissue or stump" },
+    { kind: "refine", name: "Refine the tones", tool: "HB pencil, eraser" },
     { kind: "detail", name: "Add the details", tool: "Sharp pencil" },
     { kind: "lift", name: "Lift the highlights", tool: "Kneaded eraser" },
   ];
@@ -78,7 +79,7 @@
   let idx = null; // Uint8Array, value index per pixel (0 darkest … n-1 paper)
   let SW = 0, SH = 0, slum = null; // small copy for line detection
   let lines = null; // { passes: [[poly…]…], highlights: [poly…] } in full-size coordinates
-  let blendV = null, detailV = null; // continuous 0..1 tone maps for the finishing steps
+  let blendV = null, refineV = null, detailV = null; // continuous 0..1 tone maps for the finishing steps
   let bgSmall = null; // background mask at line-detection size; the background stays white paper
   const origCanvas = $("orig"), canvas = $("canvas");
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -172,7 +173,7 @@
     // Finishing targets: the full tonal range, softened (after blending) and sharp (after details).
     const full = toneCurve(lum);
     detailV = lum.map(full);
-    blendV = boxBlur(detailV, W, H, Math.max(2, Math.round(Math.max(W, H) / 200)));
+    refineV = boxBlur(detailV, W, H, Math.max(2, Math.round(Math.max(W, H) / 220)));
   }
 
   // ───────── block-in lines ─────────
@@ -326,7 +327,7 @@
     // Trace the very pixels the value passes fill: the shadow mass (value pass 1) and the
     // darker split inside it (value pass 2). Blurring that mask and cutting it at 50% drops
     // small detail without sliding the edges of big shapes, as blurring the photo would.
-    const shapeOf = (below) => {
+    const shapeOf = (below, rad = r) => {
       const cover = new Float32Array(SW * SH);
       for (let y = 0; y < SH; y++) {
         const y0 = Math.floor(y * sy), y1 = Math.max(y0 + 1, Math.floor((y + 1) * sy));
@@ -337,7 +338,7 @@
           cover[y * SW + x] = bgMask[y * SW + x] ? 0 : hit / ((y1 - y0) * (x1 - x0));
         }
       }
-      return boxBlur(cover, SW, SH, r);
+      return boxBlur(cover, SW, SH, rad);
     };
     const shadowSoft = shapeOf(h), coreSoft = shapeOf(h - 1);
     const shadowLoops = traceContours(shadowSoft.map((c) => (c >= 0.5 ? 1 : 0)), SW, SH);
@@ -389,24 +390,42 @@
       .filter((l) => area(l) >= 0.00004 * SW * SH && area(l) <= 0.006 * SW * SH)
       .map((l) => { const p = rdpClosed(l, 0.002 * diag); return p.length >= 3 ? p : l; })
       .map(scale);
-    // The first two tone steps bridge lines and photo: a flat fill inside the straight-line
-    // shapes, then the same shapes with their corners rounded off (the smoothed masks).
+    // The tone steps bridge lines and photo. Step 1 is a flat fill inside the straight-line shapes.
+    // Each later step re-smooths every tone boundary with half the previous radius, so the shapes
+    // tighten toward the photo gradually instead of all at once.
     const last = LINE_PASSES[L - 1];
     const fill = { shadow: simplify(shadowLoops, last.eps, last.minArea), core: simplify(coreLoops, last.eps * 1.2, last.minArea) };
-    const rounded = new Uint8Array(W * H);
     const sample = (m, fx, fy) => {
       const x0 = Math.min(SW - 1, Math.max(0, Math.floor(fx))), y0 = Math.min(SH - 1, Math.max(0, Math.floor(fy)));
       const x1 = Math.min(SW - 1, x0 + 1), y1 = Math.min(SH - 1, y0 + 1), ax = Math.min(1, Math.max(0, fx - x0)), ay = Math.min(1, Math.max(0, fy - y0));
       return (m[y0 * SW + x0] * (1 - ax) + m[y0 * SW + x1] * ax) * (1 - ay) + (m[y1 * SW + x0] * (1 - ax) + m[y1 * SW + x1] * ax) * ay;
     };
-    for (let y = 0; y < H; y++) {
-      const fy = (y + 0.5) / sy - 0.5;
-      for (let x = 0; x < W; x++) {
-        const fx = (x + 0.5) / sx - 0.5;
-        rounded[y * W + x] = sample(coreSoft, fx, fy) >= 0.5 ? h - 2 : sample(shadowSoft, fx, fy) >= 0.5 ? h - 1 : state.n - 1;
+    const n = state.n, toneMaps = [];
+    let rad = r;
+    for (let v = 2; v < n; v++) {
+      const masks = [];
+      for (let k = 0; k < n - 1; k++) masks.push(k === h - 1 && rad === r ? shadowSoft : k === h - 2 && rad === r ? coreSoft : shapeOf(k + 1, rad));
+      const map = new Uint8Array(W * H);
+      for (let y = 0; y < H; y++) {
+        const fy = (y + 0.5) / sy - 0.5;
+        for (let x = 0; x < W; x++) {
+          const fx = (x + 0.5) / sx - 0.5;
+          let t = n - 1;
+          for (let k = 0; k < n - 1; k++) if (sample(masks[k], fx, fy) >= 0.5) { t = k; break; }
+          map[y * W + x] = t;
+        }
       }
+      toneMaps[v] = map;
+      if (v < n - 1) rad = Math.max(1, Math.round(rad / 2));
     }
-    lines = { passes, highlights, fill, rounded };
+    // Blend sits halfway between the last tone step (edges softened) and the softened photo,
+    // so the drawing eases from flat tones into the photo's own gradations.
+    const lastLut = stepLut(n - 1).map((t) => t / (n - 1)), lastMap = toneMaps[n - 1];
+    const flat = new Float32Array(W * H);
+    for (let i = 0; i < flat.length; i++) flat[i] = lastLut[lastMap[i]];
+    blendV = boxBlur(flat, W, H, Math.max(2, Math.round(rad * sx * 0.5)));
+    for (let i = 0; i < blendV.length; i++) blendV[i] = 0.5 * blendV[i] + 0.5 * refineV[i];
+    lines = { passes, highlights, fill, toneMaps };
   }
 
   // Segments that run along the frame edge are artefacts of shapes cut off by the crop.
@@ -505,22 +524,13 @@
     target.restore();
   }
 
-  function paintIndex(target, indices, w, h) {
-    const lut32 = Array.from({ length: state.n }, (_, i) => { const [r, g, b] = tone(i); return (255 << 24) | (b << 16) | (g << 8) | r; });
-    const img = target.createImageData(w, h);
-    const out = new Uint32Array(img.data.buffer);
-    for (let i = 0; i < out.length; i++) out[i] = lut32[indices[i]];
-    target.putImageData(img, 0, 0);
-  }
-
   // Draw a step's picture: what the paper should look like once the step is done.
-  // Tones move from the lines toward the photo: straight shapes, rounded shapes, then the photo's own.
+  // Tones move from the lines toward the photo: straight shapes, then shapes that tighten each step.
   function paintStep(target, st, w, h, maps, clear) {
     if (st.kind === "line") paintPaper(target, w, h, clear);
     else if (st.kind === "tone" && st.v === 1) paintShapes(target, w, h);
-    else if (st.kind === "tone" && st.v === 2 && maps.rounded) paintIndex(target, maps.rounded, w, h);
-    else if (st.kind === "tone") paintValues(target, maps.idx, w, h, st.v);
-    else paintContinuous(target, st.kind === "blend" ? maps.blend : maps.detail, w, h);
+    else if (st.kind === "tone") paintValues(target, maps.tone[st.v], w, h, st.v);
+    else paintContinuous(target, maps[st.kind === "lift" ? "detail" : st.kind], w, h);
   }
 
   // Which lines a step shows: current, faint previous, dashed outline, highlight marks.
@@ -590,13 +600,14 @@
     }
     return {
       blend: { no, title: "Blend the tones", text: "Rub the shading gently with a tissue or blending stump until the steps between tones disappear. Follow the curve of the face. Keep a few edges crisp: the eyelids, the nostrils and the line of the lips." },
+      refine: { no, title: "Refine the tones", text: "Compare your drawing with the picture. Darken areas that look too light with an HB pencil, and lift areas that look too dark with the eraser. Add the in-between greys so every change of tone is gradual. No small details yet." },
       detail: { no, title: "Add the details", text: "Now copy from the photo itself. With a sharp pencil, add the small darks and textures: the iris and eyelashes first, then the nostrils, the lips and a few strands of hair. Press and hold Peek to compare." },
       lift: { no, title: "Lift the highlights", text: "Press a kneaded eraser onto the spots marked in red to bring back clean white: the shine in the eyes, the tip of the nose, the lower lip. Step back and compare with the photo. You're done." },
     }[st.kind];
   }
 
   // ───────── rendering ─────────
-  const maps = () => ({ idx, blend: blendV, detail: detailV, rounded: lines && lines.rounded });
+  const maps = () => ({ blend: blendV, refine: refineV, detail: detailV, tone: lines.toneMaps });
   function render() {
     if (!idx) return;
     const st = stepAt(state.step);
@@ -657,7 +668,10 @@
       for (let y = 0; y < th; y++) for (let x = 0; x < tw; x++) out[y * tw + x] = arr[Math.min(H - 1, Math.floor((y + .5) * H / th)) * W + Math.min(W - 1, Math.floor((x + .5) * W / tw))];
       return out;
     };
-    const small = { idx: pick(idx, Uint8Array), blend: pick(blendV, Float32Array), detail: pick(detailV, Float32Array), rounded: lines && pick(lines.rounded, Uint8Array) };
+    const small = {
+      blend: pick(blendV, Float32Array), refine: pick(refineV, Float32Array), detail: pick(detailV, Float32Array),
+      tone: lines.toneMaps.map((m) => m && pick(m, Uint8Array)),
+    };
     let stage = "";
     steps().forEach((st, i) => {
       const s = i + 1;

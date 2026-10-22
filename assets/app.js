@@ -30,7 +30,7 @@
   ];
 
   const defaults = {
-    n: 4, contrast: 100, squint: 2, levels: true, grid: false, cols: 8, flip: false, paper: "warm", leads: true,
+    n: 4, contrast: 100, squint: 4, levels: true, grid: false, cols: 8, flip: false, paper: "warm", leads: true,
     lineBlur: 3, detail: 5, ghost: 15, dots: true, see: 50,
   };
   const state = { ...defaults, step: 1 };
@@ -44,7 +44,7 @@
   const PREF_KEYS = Object.keys(defaults);
 
   function loadPrefs() {
-    const saved = store.get("pc.prefs2") || {};
+    const saved = store.get("pc.prefs3") || {};
     for (const k of PREF_KEYS) if (k in saved) state[k] = saved[k];
     const h = new URLSearchParams(location.hash.slice(1));
     const num = (k, lo, hi) => { const v = parseFloat(h.get(k)); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : null; };
@@ -62,7 +62,7 @@
   function savePrefs() {
     const prefs = {};
     for (const k of PREF_KEYS) prefs[k] = state[k];
-    store.set("pc.prefs2", prefs);
+    store.set("pc.prefs3", prefs);
     const { n, contrast, squint, levels, grid, cols, flip, paper, lineBlur, detail } = state;
     const h = new URLSearchParams({
       v: n, c: contrast, s: squint, l: +levels, g: +grid, k: cols, f: +flip, p: paper, b: lineBlur, d: detail, t: state.step,
@@ -337,11 +337,11 @@
           cover[y * SW + x] = bgMask[y * SW + x] ? 0 : hit / ((y1 - y0) * (x1 - x0));
         }
       }
-      const soft = boxBlur(cover, SW, SH, r);
-      return traceContours(soft.map((c) => (c >= 0.5 ? 1 : 0)), SW, SH);
+      return boxBlur(cover, SW, SH, r);
     };
-    const shadowLoops = shapeOf(h);
-    const coreLoops = h > 1 ? shapeOf(h - 1) : [];
+    const shadowSoft = shapeOf(h), coreSoft = shapeOf(h - 1);
+    const shadowLoops = traceContours(shadowSoft.map((c) => (c >= 0.5 ? 1 : 0)), SW, SH);
+    const coreLoops = traceContours(coreSoft.map((c) => (c >= 0.5 ? 1 : 0)), SW, SH);
     const edgesTouched = (p) => {
       const t = Math.min(SW, SH) * 0.03;
       return [p.some(([x]) => x < t), p.some(([x]) => x > SW - 1 - t), p.some(([, y]) => y < t), p.some(([, y]) => y > SH - 1 - t)].filter(Boolean).length;
@@ -389,7 +389,24 @@
       .filter((l) => area(l) >= 0.00004 * SW * SH && area(l) <= 0.006 * SW * SH)
       .map((l) => { const p = rdpClosed(l, 0.002 * diag); return p.length >= 3 ? p : l; })
       .map(scale);
-    lines = { passes, highlights };
+    // The first two tone steps bridge lines and photo: a flat fill inside the straight-line
+    // shapes, then the same shapes with their corners rounded off (the smoothed masks).
+    const last = LINE_PASSES[L - 1];
+    const fill = { shadow: simplify(shadowLoops, last.eps, last.minArea), core: simplify(coreLoops, last.eps * 1.2, last.minArea) };
+    const rounded = new Uint8Array(W * H);
+    const sample = (m, fx, fy) => {
+      const x0 = Math.min(SW - 1, Math.max(0, Math.floor(fx))), y0 = Math.min(SH - 1, Math.max(0, Math.floor(fy)));
+      const x1 = Math.min(SW - 1, x0 + 1), y1 = Math.min(SH - 1, y0 + 1), ax = Math.min(1, Math.max(0, fx - x0)), ay = Math.min(1, Math.max(0, fy - y0));
+      return (m[y0 * SW + x0] * (1 - ax) + m[y0 * SW + x1] * ax) * (1 - ay) + (m[y1 * SW + x0] * (1 - ax) + m[y1 * SW + x1] * ax) * ay;
+    };
+    for (let y = 0; y < H; y++) {
+      const fy = (y + 0.5) / sy - 0.5;
+      for (let x = 0; x < W; x++) {
+        const fx = (x + 0.5) / sx - 0.5;
+        rounded[y * W + x] = sample(coreSoft, fx, fy) >= 0.5 ? h - 2 : sample(shadowSoft, fx, fy) >= 0.5 ? h - 1 : state.n - 1;
+      }
+    }
+    lines = { passes, highlights, fill, rounded };
   }
 
   // Segments that run along the frame edge are artefacts of shapes cut off by the crop.
@@ -473,9 +490,35 @@
     target.restore();
   }
 
+  // Tone step 1: flat tone inside the straight-line shapes, drawn as polygons.
+  function paintShapes(target, w, h) {
+    const k = w / W, hf = half();
+    target.save();
+    target.fillStyle = css(tone(state.n - 1)); target.fillRect(0, 0, w, h);
+    const fillPolys = (polys, t) => {
+      target.fillStyle = css(tone(t));
+      target.beginPath();
+      for (const p of polys) { p.forEach(([x, y], i) => (i ? target.lineTo(x * k, y * k) : target.moveTo(x * k, y * k))); target.closePath(); }
+      target.fill("evenodd");
+    };
+    if (lines) fillPolys(lines.fill.shadow, hf - 1);
+    target.restore();
+  }
+
+  function paintIndex(target, indices, w, h) {
+    const lut32 = Array.from({ length: state.n }, (_, i) => { const [r, g, b] = tone(i); return (255 << 24) | (b << 16) | (g << 8) | r; });
+    const img = target.createImageData(w, h);
+    const out = new Uint32Array(img.data.buffer);
+    for (let i = 0; i < out.length; i++) out[i] = lut32[indices[i]];
+    target.putImageData(img, 0, 0);
+  }
+
   // Draw a step's picture: what the paper should look like once the step is done.
+  // Tones move from the lines toward the photo: straight shapes, rounded shapes, then the photo's own.
   function paintStep(target, st, w, h, maps, clear) {
     if (st.kind === "line") paintPaper(target, w, h, clear);
+    else if (st.kind === "tone" && st.v === 1) paintShapes(target, w, h);
+    else if (st.kind === "tone" && st.v === 2 && maps.rounded) paintIndex(target, maps.rounded, w, h);
     else if (st.kind === "tone") paintValues(target, maps.idx, w, h, st.v);
     else paintContinuous(target, st.kind === "blend" ? maps.blend : maps.detail, w, h);
   }
@@ -485,7 +528,7 @@
     const none = { cur: [], prev: [], env: [], hl: [] };
     if (!lines) return none;
     if (st.kind === "line") return { ...none, cur: lines.passes[st.i], prev: st.i > 1 ? lines.passes[st.i - 1] : [], env: st.i > 0 ? lines.passes[0] : [] };
-    if (st.kind === "tone") return { ...none, prev: lines.passes[L - 1] };
+    if (st.kind === "tone" && st.v === 1) return { ...none, prev: lines.passes[L - 1] };
     if (st.kind === "lift") return { ...none, hl: lines.highlights };
     return none;
   }
@@ -534,7 +577,12 @@
     }
     if (st.kind === "tone") {
       const { v, t } = st, h = half(), last = state.n - 1;
-      if (v === 1) return { no, title: "Fill the shadows", text: `Shade inside every shadow shape with one even, flat tone using ${pencil(t)}. Use the side of the lead and light pressure, and go over it again until it looks even. Leave everything else white.` };
+      if (v === 1) return { no, title: "Fill the shadows", text: `Shade inside the shapes you just drew with one even, flat tone using ${pencil(t)}. Stay inside your lines. Use the side of the lead and light pressure, and go over it again until it looks even. Leave everything else white.` };
+      if (v === 2) {
+        const round = "Now soften the straight corners so the shadow edges follow the curves you see in the photo.";
+        if (v === h) return { no, title: "Round off and add the darks", text: `${round} Then press harder with ${pencil(0)} in the darkest areas only: the pupils, nostrils, the line between the lips and the darkest hair.` };
+        return { no, title: "Round off the shadows", text: `${round} Then go over the darker parts of the shadow with ${pencil(t)}.` };
+      }
       if (v === h) return { no, title: "Add the darkest darks", text: `Press harder with ${pencil(0)} in the darkest spots only: the pupils, nostrils, the line between the lips and the darkest hair. Keep them small.` };
       if (v < h) return { no, title: "Deepen the shadows", text: `Inside the shadows, find the areas that are darker still. Go over them with ${pencil(t)}.` };
       if (v === last) return { no, title: "Shade the half-tones", text: `Very lightly shade the grey areas on the lit side with ${pencil(t)}. Leave the brightest spots white: they become your highlights.` };
@@ -548,7 +596,7 @@
   }
 
   // ───────── rendering ─────────
-  const maps = () => ({ idx, blend: blendV, detail: detailV });
+  const maps = () => ({ idx, blend: blendV, detail: detailV, rounded: lines && lines.rounded });
   function render() {
     if (!idx) return;
     const st = stepAt(state.step);
@@ -609,7 +657,7 @@
       for (let y = 0; y < th; y++) for (let x = 0; x < tw; x++) out[y * tw + x] = arr[Math.min(H - 1, Math.floor((y + .5) * H / th)) * W + Math.min(W - 1, Math.floor((x + .5) * W / tw))];
       return out;
     };
-    const small = { idx: pick(idx, Uint8Array), blend: pick(blendV, Float32Array), detail: pick(detailV, Float32Array) };
+    const small = { idx: pick(idx, Uint8Array), blend: pick(blendV, Float32Array), detail: pick(detailV, Float32Array), rounded: lines && pick(lines.rounded, Uint8Array) };
     let stage = "";
     steps().forEach((st, i) => {
       const s = i + 1;

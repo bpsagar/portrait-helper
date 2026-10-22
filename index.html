@@ -30,9 +30,9 @@
 <!-- ───────── Empty state ───────── -->
 <main id="welcome" class="welcome">
   <div class="welcome-copy">
-    <p class="eyebrow">A value study, one pass at a time</p>
+    <p class="eyebrow">A realistic portrait in nine small steps</p>
     <h1>Draw the shadows first.<br><em>The face follows.</em></h1>
-    <p class="lede">Drop in a reference photo. Portrait Coach flattens it into a handful of tones, then walks you from the darkest mass to the lightest light, so you only ever decide one thing at a time.</p>
+    <p class="lede">Drop in a reference photo. Portrait Coach breaks it into nine small steps, from a few straight lines to a finished, realistic drawing. Each step shows you what your paper should look like next.</p>
 
     <label class="drop" id="drop" tabindex="0">
       <span class="drop-title">Drop a photo here</span>
@@ -54,10 +54,11 @@
       <div class="samples small" id="recent"></div>
     </div>
     <ol class="how">
-      <li><b>Simplify.</b> Choose how many values to work with.</li>
-      <li><b>Block in.</b> Fill the darkest shapes first, with one pencil.</li>
-      <li><b>Deepen, then lift.</b> Split the shadows, then add the lights.</li>
+      <li><b>Lines.</b> Outline the head and the shadow shapes with light, straight lines.</li>
+      <li><b>Tones.</b> Fill the shadows, then the darkest darks, then the half-tones.</li>
+      <li><b>Finish.</b> Blend smooth, add the details, lift the highlights.</li>
     </ol>
+    <p class="kit"><b>You'll need</b> 2H, B and 6B pencils, a tissue or blending stump, and a kneaded eraser.</p>
   </div>
 </main>
 
@@ -65,9 +66,9 @@
 <div id="studio" class="studio" hidden>
 
   <aside class="scale" aria-label="Value scale">
-    <h2 class="rail-title" id="railTitle">Values</h2>
+    <h2 class="rail-title" id="railTitle">Your steps</h2>
     <ol id="scaleList" class="scale-list"></ol>
-    <p class="rail-foot" id="railFoot">Tap a value to jump to the pass that introduces it.</p>
+    <p class="rail-foot" id="railFoot">Tap any step to jump to it.</p>
   </aside>
 
   <section class="stage-wrap">
@@ -112,8 +113,8 @@
     <section>
       <h3>Simplify</h3>
       <label class="field">
-        <span>Values <output id="valuesOut"></output></span>
-        <input type="range" id="values" min="3" max="10" step="1">
+        <span>Tones <output id="valuesOut"></output></span>
+        <input type="range" id="values" min="3" max="8" step="1">
       </label>
       <label class="field">
         <span>Contrast <output id="contrastOut"></output></span>

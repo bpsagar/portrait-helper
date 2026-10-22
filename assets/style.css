@@ -113,6 +113,11 @@ kbd {
 .how li { counter-increment: s; padding-left: 32px; position: relative; }
 .how li::before { content: counter(s); position: absolute; left: 0; top: -3px; font: italic 400 21px var(--serif); color: var(--chalk-hi); }
 .how b { color: var(--ink); font-weight: 600; }
+.kit { margin: 18px 0 0; padding: 12px 14px; border-radius: 10px; background: var(--bg-2); border: 1px solid var(--line); color: var(--ink-2); font-size: 14px; }
+.kit b { display: block; color: var(--ink); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 2px; }
+.stage-head { list-style: none; margin: 14px 0 4px; font: 600 11px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+.stage-head:first-child { margin-top: 0; }
+#linesSvg .hl { stroke: var(--chalk); stroke-width: 2; stroke-dasharray: 4 4; }
 
 /* ───── studio ───── */
 .studio {
@@ -253,6 +258,7 @@ input[type="range"] { width: 100%; accent-color: var(--chalk); height: 20px; mar
   .scale-list { flex-direction: row; gap: 4px; }
   .val { width: auto; grid-template-columns: 30px; padding: 4px; }
   .val .nm { display: none; }
+  .stage-head { display: none; }
   .stage-wrap { grid-column: 1; grid-row: 2; }
   .panel { grid-column: 2; grid-row: 2; }
   .studio { grid-template-rows: auto minmax(0, 1fr); }

@@ -12,22 +12,25 @@
     { id: "ronaldo", name: "Portrait", src: "assets/samples/ronaldo.jpg" },
   ];
 
-  const NAMES = ["Darkest accent", "Deep shadow", "Shadow", "Core shadow", "Midtone", "Half-light", "Light", "Highlight edge"];
-  const LEADS = ["8B", "6B", "5B", "4B", "2B", "B", "HB", "F", "2H"];
+  const LEADS = ["6B", "4B", "2B", "B", "HB", "H", "2H"];
   const GRAPHITE = [29, 27, 24];
   const PAPERS = { warm: [241, 234, 220], cool: [233, 236, 238], gray: [168, 163, 153] };
 
-  // Block-in passes: envelope first, then the shadow shapes simplified less each time.
+  // Line steps: the outline first, then the shadow shapes, simplified less the second time.
   const LINE_PASSES = [
-    { name: "Envelope" },
-    { name: "Big shapes", eps: 0.06, minArea: 0.012 },
-    { name: "Subdivide", eps: 0.03, minArea: 0.005 },
-    { name: "Refine", eps: 0.01, minArea: 0.002, core: true },
+    { name: "Outline the head" },
+    { name: "Draw the shadow shapes", eps: 0.04, minArea: 0.008 },
+    { name: "Refine the shapes", eps: 0.01, minArea: 0.002, core: true },
   ];
   const L = LINE_PASSES.length;
+  const FINISH = [
+    { kind: "blend", name: "Blend the tones", tool: "Tissue or stump" },
+    { kind: "detail", name: "Add the details", tool: "Sharp pencil" },
+    { kind: "lift", name: "Lift the highlights", tool: "Kneaded eraser" },
+  ];
 
   const defaults = {
-    n: 6, contrast: 100, squint: 2, levels: true, grid: false, cols: 8, flip: false, paper: "warm", leads: true,
+    n: 4, contrast: 100, squint: 2, levels: true, grid: false, cols: 8, flip: false, paper: "warm", leads: true,
     lineBlur: 3, detail: 5, ghost: 15, dots: true, see: 50,
   };
   const state = { ...defaults, step: 1 };
@@ -41,7 +44,7 @@
   const PREF_KEYS = Object.keys(defaults);
 
   function loadPrefs() {
-    const saved = store.get("pc.prefs") || {};
+    const saved = store.get("pc.prefs2") || {};
     for (const k of PREF_KEYS) if (k in saved) state[k] = saved[k];
     const h = new URLSearchParams(location.hash.slice(1));
     const num = (k, lo, hi) => { const v = parseFloat(h.get(k)); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : null; };
@@ -59,7 +62,7 @@
   function savePrefs() {
     const prefs = {};
     for (const k of PREF_KEYS) prefs[k] = state[k];
-    store.set("pc.prefs", prefs);
+    store.set("pc.prefs2", prefs);
     const { n, contrast, squint, levels, grid, cols, flip, paper, lineBlur, detail } = state;
     const h = new URLSearchParams({
       v: n, c: contrast, s: squint, l: +levels, g: +grid, k: cols, f: +flip, p: paper, b: lineBlur, d: detail, t: state.step,
@@ -74,7 +77,9 @@
   let lum = null; // Float32Array, 0..255
   let idx = null; // Uint8Array, value index per pixel (0 darkest … n-1 paper)
   let SW = 0, SH = 0, slum = null; // small copy for line detection
-  let lines = null; // { passes: [[poly…]…] } in full-size coordinates
+  let lines = null; // { passes: [[poly…]…], highlights: [poly…] } in full-size coordinates
+  let blendV = null, detailV = null; // continuous 0..1 tone maps for the finishing steps
+  let bgSmall = null; // background mask at line-detection size; the background stays white paper
   const origCanvas = $("orig"), canvas = $("canvas");
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   const grayCanvas = document.createElement("canvas");
@@ -157,6 +162,17 @@
     const curve = toneCurve(g), n = state.n;
     idx = new Uint8Array(g.length);
     for (let i = 0; i < g.length; i++) idx[i] = Math.round(curve(g[i]) * (n - 1));
+    // The tone steps leave the background as white paper.
+    bgSmall = backgroundMask(slum, SW, SH);
+    const bgHard = new Float32Array(W * H);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      bgHard[y * W + x] = bgSmall[Math.min(SH - 1, Math.floor(y * SH / H)) * SW + Math.min(SW - 1, Math.floor(x * SW / W))];
+    }
+    for (let i = 0; i < idx.length; i++) if (bgHard[i]) idx[i] = n - 1;
+    // Finishing targets: the full tonal range, softened (after blending) and sharp (after details).
+    const full = toneCurve(lum);
+    detailV = lum.map(full);
+    blendV = boxBlur(detailV, W, H, Math.max(2, Math.round(Math.max(W, H) / 200)));
   }
 
   // ───────── block-in lines ─────────
@@ -305,7 +321,7 @@
 
   function computeLines() {
     const diag = Math.hypot(SW, SH), sx = W / SW, sy = H / SH, h = half();
-    const bgMask = backgroundMask(slum, SW, SH);
+    const bgMask = bgSmall;
     const r = Math.max(1, Math.round((state.lineBlur / 100) * diag));
     // Trace the very pixels the value passes fill: the shadow mass (value pass 1) and the
     // darker split inside it (value pass 2). Blurring that mask and cutting it at 50% drops
@@ -362,7 +378,18 @@
       if (p.core) polys = polys.concat(simplify(coreLoops, p.eps * 1.2, p.minArea));
       passes.push(polys);
     }
-    lines = { passes };
+    // Highlights: small spots clearly brighter than their surroundings (the shine in the eyes,
+    // on the nose and the lips), kept away from the background edge.
+    const lv = slum.map(toneCurve(slum));
+    const around = boxBlur(lv, SW, SH, Math.max(2, Math.round(diag * 0.012)));
+    const nearBg = boxBlur(Float32Array.from(bgMask), SW, SH, Math.max(2, Math.round(diag * 0.01)));
+    const hiMask = new Uint8Array(SW * SH);
+    for (let i = 0; i < hiMask.length; i++) hiMask[i] = nearBg[i] < 0.01 && lv[i] > 0.6 && lv[i] - around[i] > 0.14 ? 1 : 0;
+    const highlights = traceContours(hiMask, SW, SH)
+      .filter((l) => area(l) >= 0.00004 * SW * SH && area(l) <= 0.006 * SW * SH)
+      .map((l) => { const p = rdpClosed(l, 0.002 * diag); return p.length >= 3 ? p : l; })
+      .map(scale);
+    lines = { passes, highlights };
   }
 
   // Segments that run along the frame edge are artefacts of shapes cut off by the crop.
@@ -383,52 +410,19 @@
       .map(([x, y]) => `M${x.toFixed(1)} ${y.toFixed(1)}h0`).join("");
   };
 
-  // Which line layers a step shows: [current, faint previous, envelope]
-  function lineLayers(step) {
-    if (!lines) return null;
-    if (step > L) return { cur: [], prev: lines.passes[L - 1], env: [] };
-    const i = step - 1;
-    return { cur: lines.passes[i], prev: i > 1 ? lines.passes[i - 1] : [], env: i > 0 ? lines.passes[0] : [] };
-  }
-
-  function renderLines() {
-    const svg = $("linesSvg"), layers = lineLayers(state.step);
-    if (!layers) { svg.replaceChildren(); return; }
-    const ns = "http://www.w3.org/2000/svg", kids = [];
-    const add = (cls, d) => { if (!d) return; const p = document.createElementNS(ns, "path"); p.setAttribute("class", cls); p.setAttribute("d", d); kids.push(p); };
-    add("env", pathOf(layers.env));
-    add("prev", pathOf(layers.prev));
-    add("cur", pathOf(layers.cur));
-    if (state.dots) add("dots", dotsOf(layers.cur));
-    svg.replaceChildren(...kids);
-  }
-
-  function strokeLines(c, step, k, opts = {}) {
-    const layers = lineLayers(step);
-    if (!layers) return;
-    const lead = "rgb(42,38,32)";
-    const draw = (polys, alpha, width, dash) => {
-      c.save();
-      c.strokeStyle = lead; c.globalAlpha = alpha; c.lineWidth = width; c.lineCap = "round"; c.setLineDash(dash || []);
-      c.beginPath();
-      for (const [a, b] of polys.flatMap(segmentsOf)) { c.moveTo(a[0] * k, a[1] * k); c.lineTo(b[0] * k, b[1] * k); }
-      c.stroke(); c.restore();
-    };
-    const w = opts.width || 1;
-    draw(layers.env, 0.35, w * 0.6, [w * 3, w * 2.5]);
-    draw(layers.prev, 0.25, w * 0.7);
-    draw(layers.cur, 1, w);
-    if (opts.dots && state.dots) {
-      c.fillStyle = "rgb(196,85,58)";
-      for (const [x, y] of layers.cur.flat()) { c.beginPath(); c.arc(x * k, y * k, w * 1.6, 0, 7); c.fill(); }
-    }
-  }
-
-  // ───────── passes ─────────
+  // ───────── steps ─────────
+  // Lines → Tones → Finish. Tones has one step per tone added (n - 1).
   const half = () => Math.ceil(state.n / 2);
-  const valueSteps = () => state.n - 1;
-  const totalSteps = () => L + valueSteps();
-  const introStep = (i) => L + (i < half() ? half() - i : i + 1);
+  function steps() {
+    const out = LINE_PASSES.map((p, i) => ({ stage: "Lines", kind: "line", i, name: p.name }));
+    for (let v = 1; v < state.n; v++) out.push({ stage: "Tones", kind: "tone", v, t: toneOfStep(v) });
+    for (const f of FINISH) out.push({ stage: "Finish", ...f });
+    return out;
+  }
+  const totalSteps = () => L + state.n - 1 + FINISH.length;
+  const stepAt = (n) => steps()[n - 1];
+  // The tone a value step adds: darks from the shadow mass inward, then the lights.
+  const toneOfStep = (v) => (v <= half() ? half() - v : v - 1);
 
   function stepLut(vstep) {
     const n = state.n, h = half(), lut = new Array(n).fill(n - 1);
@@ -446,9 +440,8 @@
     return GRAPHITE.map((g, k) => Math.round(g + (p[k] - g) * f));
   }
   const css = (rgb) => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
-  const nameOf = (i) => NAMES[Math.round((i / (state.n - 2)) * (NAMES.length - 1))];
-  const leadOf = (i) => LEADS[Math.round((i / (state.n - 2)) * (LEADS.length - 1))];
-  const label = (i) => (state.leads ? `${nameOf(i)}, ${leadOf(i)}` : nameOf(i));
+  const leadOf = (i) => LEADS[Math.round((i / Math.max(1, state.n - 2)) * (LEADS.length - 1))];
+  const pencil = (i) => `${chip(i)}${state.leads ? `<b>${leadOf(i)}</b>` : "<b>this tone</b>"}`;
   const chip = (i) => `<span class="tone" style="background:${css(tone(i))}"></span>`;
 
   function paintValues(target, indices, w, h, vstep) {
@@ -456,6 +449,18 @@
     const img = target.createImageData(w, h);
     const out = new Uint32Array(img.data.buffer);
     for (let i = 0; i < out.length; i++) out[i] = lut32[indices[i]];
+    target.putImageData(img, 0, 0);
+  }
+
+  function paintContinuous(target, values, w, h) {
+    const p = PAPERS[state.paper], lut32 = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      const [r, g, b] = GRAPHITE.map((c, k) => Math.round(c + (p[k] - c) * (i / 255)));
+      lut32[i] = (255 << 24) | (b << 16) | (g << 8) | r;
+    }
+    const img = target.createImageData(w, h);
+    const out = new Uint32Array(img.data.buffer);
+    for (let i = 0; i < out.length; i++) out[i] = lut32[(values[i] * 255) | 0];
     target.putImageData(img, 0, 0);
   }
 
@@ -468,42 +473,94 @@
     target.restore();
   }
 
-  function coachCopy(step) {
-    const no = `Pass ${step} of ${totalSteps()}`;
-    if (step <= L) {
-      const lead = state.leads ? " Use a hard pencil (2H) and press lightly." : "";
-      return [
-        { no, title: "Mark the envelope", text: `Find the outermost points of the head: top of the hair, the chin, the widest points left and right. Connect them with a few long straight lines. No curves and no features yet.${lead}` },
-        { no, title: "Block in the big shapes", text: "Squint until the face breaks into a few dark masses. Outline each shadow shape with long straight lines. Every corner is a measuring point: check its angle and position against the envelope." },
-        { no, title: "Subdivide the lines", text: "Split each long line into two or three shorter ones where the edge changes direction. Check every new corner against its neighbours before moving on." },
-        { no, title: "Refine and find the core", text: "Cut the corners once more and add the darker core shapes inside the shadow. This is your map for shading. The next passes fill it with values." },
-      ][step - 1];
+  // Draw a step's picture: what the paper should look like once the step is done.
+  function paintStep(target, st, w, h, maps, clear) {
+    if (st.kind === "line") paintPaper(target, w, h, clear);
+    else if (st.kind === "tone") paintValues(target, maps.idx, w, h, st.v);
+    else paintContinuous(target, st.kind === "blend" ? maps.blend : maps.detail, w, h);
+  }
+
+  // Which lines a step shows: current, faint previous, dashed outline, highlight marks.
+  function lineLayers(st) {
+    const none = { cur: [], prev: [], env: [], hl: [] };
+    if (!lines) return none;
+    if (st.kind === "line") return { ...none, cur: lines.passes[st.i], prev: st.i > 1 ? lines.passes[st.i - 1] : [], env: st.i > 0 ? lines.passes[0] : [] };
+    if (st.kind === "tone") return { ...none, prev: lines.passes[L - 1] };
+    if (st.kind === "lift") return { ...none, hl: lines.highlights };
+    return none;
+  }
+
+  function renderLines() {
+    const svg = $("linesSvg"), layers = lineLayers(stepAt(state.step));
+    const ns = "http://www.w3.org/2000/svg", kids = [];
+    const add = (cls, d) => { if (!d) return; const p = document.createElementNS(ns, "path"); p.setAttribute("class", cls); p.setAttribute("d", d); kids.push(p); };
+    add("env", pathOf(layers.env));
+    add("prev", pathOf(layers.prev));
+    add("cur", pathOf(layers.cur));
+    add("hl", pathOf(layers.hl));
+    if (state.dots) add("dots", dotsOf(layers.cur));
+    svg.replaceChildren(...kids);
+  }
+
+  function strokeLines(c, st, k, opts = {}) {
+    const layers = lineLayers(st);
+    const draw = (polys, color, alpha, width, dash) => {
+      c.save();
+      c.strokeStyle = color; c.globalAlpha = alpha; c.lineWidth = width; c.lineCap = "round"; c.setLineDash(dash || []);
+      c.beginPath();
+      for (const [a, b] of polys.flatMap(segmentsOf)) { c.moveTo(a[0] * k, a[1] * k); c.lineTo(b[0] * k, b[1] * k); }
+      c.stroke(); c.restore();
+    };
+    const w = opts.width || 1, lead = "rgb(42,38,32)", red = "rgb(196,85,58)";
+    draw(layers.env, lead, 0.35, w * 0.6, [w * 3, w * 2.5]);
+    draw(layers.prev, lead, 0.25, w * 0.7);
+    draw(layers.cur, lead, 1, w);
+    draw(layers.hl, red, 1, w, [w * 2, w * 2]);
+    if (opts.dots && state.dots) {
+      c.fillStyle = red;
+      for (const [x, y] of layers.cur.flat()) { c.beginPath(); c.arc(x * k, y * k, w * 1.6, 0, 7); c.fill(); }
     }
-    const v = step - L, h = half(), last = valueSteps();
-    if (v <= h) {
-      const t = h - v;
-      if (v === 1) return { no, title: "Fill the shadow mass", text: `Lay one flat tone, ${chip(t)}<b>${label(t)}</b>, inside the shadow shapes you blocked in. Ignore features. Keep the edges where your lines are.` };
-      if (v === h) return { no, title: "Find the darkest darks", text: `Place the deepest accents, ${chip(0)}<b>${label(0)}</b>: pupils, nostrils, the corner of the mouth, under the hair. Use them sparingly so they stay powerful.` };
-      return { no, title: "Split the shadows", text: `Find where the shadow deepens. Darken those shapes to ${chip(t)}<b>${label(t)}</b> and leave everything lighter as it is.` };
+  }
+
+  function coachCopy(st, step) {
+    const no = `${st.stage} · Step ${step} of ${totalSteps()}`;
+    if (st.kind === "line") {
+      const how = state.leads ? " Use a 2H pencil and press lightly, so the lines are easy to erase." : " Press lightly, so the lines are easy to erase.";
+      return { no, ...[
+        { title: "Outline the head", text: `Draw a few straight lines around the outside of the head. Touch the top of the hair, the chin and the widest points on each side. No curves and no features yet.${how}` },
+        { title: "Draw the shadow shapes", text: "Squint at the photo until it turns into a few dark patches. Outline each dark patch with straight lines. Place the red corner points first, then join them." },
+        { title: "Refine the shapes", text: "Add more corners so your lines follow the shadows more closely, and outline the darkest patches inside them. Erase any line that no longer fits." },
+      ][st.i] };
     }
-    const i = v - 1;
-    if (v === last) return { no, title: "Light touches", text: `Add the last tone, ${chip(i)}<b>${label(i)}</b>, on the planes just before the highlights. Whatever stays blank is your <b>paper</b>. Protect it, then soften edges to taste.` };
-    return { no, title: "Bring in the lights", text: `Move into the half-lights. Fill the areas of ${chip(i)}<b>${label(i)}</b>, keeping edges soft where the form turns away from the light.` };
+    if (st.kind === "tone") {
+      const { v, t } = st, h = half(), last = state.n - 1;
+      if (v === 1) return { no, title: "Fill the shadows", text: `Shade inside every shadow shape with one even, flat tone using ${pencil(t)}. Use the side of the lead and light pressure, and go over it again until it looks even. Leave everything else white.` };
+      if (v === h) return { no, title: "Add the darkest darks", text: `Press harder with ${pencil(0)} in the darkest spots only: the pupils, nostrils, the line between the lips and the darkest hair. Keep them small.` };
+      if (v < h) return { no, title: "Deepen the shadows", text: `Inside the shadows, find the areas that are darker still. Go over them with ${pencil(t)}.` };
+      if (v === last) return { no, title: "Shade the half-tones", text: `Very lightly shade the grey areas on the lit side with ${pencil(t)}. Leave the brightest spots white: they become your highlights.` };
+      return { no, title: "Add the mid-greys", text: `On the lit side, shade the areas that are clearly grey with ${pencil(t)}. Keep the lightest areas white for now.` };
+    }
+    return {
+      blend: { no, title: "Blend the tones", text: "Rub the shading gently with a tissue or blending stump until the steps between tones disappear. Follow the curve of the face. Keep a few edges crisp: the eyelids, the nostrils and the line of the lips." },
+      detail: { no, title: "Add the details", text: "Now copy from the photo itself. With a sharp pencil, add the small darks and textures: the iris and eyelashes first, then the nostrils, the lips and a few strands of hair. Press and hold Peek to compare." },
+      lift: { no, title: "Lift the highlights", text: "Press a kneaded eraser onto the spots marked in red to bring back clean white: the shine in the eyes, the tip of the nose, the lower lip. Step back and compare with the photo. You're done." },
+    }[st.kind];
   }
 
   // ───────── rendering ─────────
+  const maps = () => ({ idx, blend: blendV, detail: detailV });
   function render() {
     if (!idx) return;
-    if (state.step <= L) paintPaper(ctx, W, H, tracing);
-    else paintValues(ctx, idx, W, H, state.step - L);
+    const st = stepAt(state.step);
+    paintStep(ctx, st, W, H, maps(), tracing);
     renderLines();
-    const { no, title, text } = coachCopy(state.step);
+    const { no, title, text } = coachCopy(st, state.step);
     $("passNo").textContent = no;
     $("passTitle").textContent = title;
     $("passText").innerHTML = text;
     $("prev").disabled = state.step <= 1;
     $("next").disabled = state.step >= totalSteps();
-    $("next").textContent = state.step >= totalSteps() ? "Finished" : "Next pass →";
+    $("next").textContent = state.step >= totalSteps() ? "Finished" : "Next step →";
     renderRail();
     markProgress();
     $("paper").classList.toggle("flip", state.flip);
@@ -518,57 +575,57 @@
     b.innerHTML = `${swHtml}<span class="nm"></span>`;
     b.lastChild.textContent = name;
     const sm = document.createElement("small"); sm.textContent = small; b.lastChild.appendChild(sm);
-    if (onclick) b.onclick = onclick; else b.disabled = true;
+    b.onclick = onclick;
     li.appendChild(b);
     return li;
   }
 
   function renderRail() {
-    const step = state.step, frag = document.createDocumentFragment();
-    if (step <= L) {
-      $("railTitle").textContent = "Block-in";
-      $("railFoot").textContent = "Straight lines only. Curves come later, when you shade.";
-      LINE_PASSES.forEach((p, i) => {
-        const s = i + 1, st = s === step ? "new" : s < step ? "done" : "later";
-        frag.appendChild(railItem(`<span class="sw num">${s}</span>`, p.name, { new: "Draw now", done: "In place", later: "Coming later" }[st], st, () => go(s)));
-      });
-    } else {
-      $("railTitle").textContent = "Values";
-      $("railFoot").textContent = "Tap a value to jump to the pass that introduces it.";
-      const n = state.n, h = half(), v = step - L;
-      for (let i = n - 1; i >= 0; i--) {
-        let st;
-        if (i === n - 1) st = "paper";
-        else if (introStep(i) === step) st = "new";
-        else if (i < h && v <= h && i < h - v) st = "merged";
-        else st = introStep(i) < step ? "done" : "later";
-        const small = { paper: "Left blank", new: "Add now", merged: "Not yet, drawn lighter", done: "In place", later: "Coming later" }[st];
-        const lead = state.leads && i < n - 1 ? ` · ${leadOf(i)}` : "";
-        frag.appendChild(railItem(`<span class="sw" style="background:${css(tone(i))}"></span>`,
-          i === n - 1 ? "Paper" : nameOf(i), small + lead, st, i < n - 1 ? () => go(introStep(i)) : null));
+    const frag = document.createDocumentFragment();
+    let stage = "";
+    steps().forEach((st, i) => {
+      const n = i + 1, state_ = n === state.step ? "new" : n < state.step ? "done" : "later";
+      if (st.stage !== stage) {
+        stage = st.stage;
+        const h = document.createElement("li"); h.className = "stage-head"; h.textContent = stage; frag.appendChild(h);
       }
-    }
+      let sw = `<span class="sw num">${n}</span>`, name = st.name, tool = "";
+      if (st.kind === "line") tool = state.leads ? "2H, light lines" : "Light lines";
+      else if (st.kind === "tone") {
+        sw = `<span class="sw" style="background:${css(tone(st.t))}"></span>`;
+        name = coachCopy(st, n).title;
+        tool = state.leads ? leadOf(st.t) : "";
+      } else tool = st.tool;
+      frag.appendChild(railItem(sw, name, tool, state_, () => go(n)));
+    });
     $("scaleList").replaceChildren(frag);
   }
 
   function buildProgress() {
     const frag = document.createDocumentFragment();
     const tw = 96, th = Math.max(1, Math.round(96 * H / W)), k = tw / W;
-    const small = new Uint8Array(tw * th);
-    for (let y = 0; y < th; y++) for (let x = 0; x < tw; x++) small[y * tw + x] = idx[Math.min(H - 1, Math.floor((y + .5) * H / th)) * W + Math.min(W - 1, Math.floor((x + .5) * W / tw))];
-    for (let s = 1; s <= totalSteps(); s++) {
-      if (s === L + 1) { const gap = document.createElement("span"); gap.className = "gap"; frag.appendChild(gap); }
+    const pick = (arr, T) => {
+      const out = new T(tw * th);
+      for (let y = 0; y < th; y++) for (let x = 0; x < tw; x++) out[y * tw + x] = arr[Math.min(H - 1, Math.floor((y + .5) * H / th)) * W + Math.min(W - 1, Math.floor((x + .5) * W / tw))];
+      return out;
+    };
+    const small = { idx: pick(idx, Uint8Array), blend: pick(blendV, Float32Array), detail: pick(detailV, Float32Array) };
+    let stage = "";
+    steps().forEach((st, i) => {
+      const s = i + 1;
+      if (stage && st.stage !== stage) { const gap = document.createElement("span"); gap.className = "gap"; frag.appendChild(gap); }
+      stage = st.stage;
       const b = document.createElement("button");
       b.type = "button"; b.setAttribute("role", "tab"); b.dataset.step = s;
-      b.setAttribute("aria-label", s <= L ? `Block-in: ${LINE_PASSES[s - 1].name}` : `Value pass ${s - L}`);
+      b.setAttribute("aria-label", `Step ${s}: ${st.stage}`);
       const c = document.createElement("canvas"); c.width = tw; c.height = th;
       const cx = c.getContext("2d");
-      if (s <= L) { paintPaper(cx, tw, th, false); strokeLines(cx, s, k, { width: 1 }); }
-      else paintValues(cx, small, tw, th, s - L);
+      paintStep(cx, st, tw, th, small, false);
+      if (st.kind === "line") strokeLines(cx, st, k, { width: 1 });
       b.appendChild(c);
       b.onclick = () => go(s);
       frag.appendChild(b);
-    }
+    });
     $("progress").replaceChildren(frag);
   }
   function markProgress() {
@@ -803,8 +860,9 @@
     const o = out.getContext("2d");
     o.save();
     if (state.flip) { o.translate(W, 0); o.scale(-1, 1); }
-    if (state.step <= L) paintPaper(o, W, H, false); else o.drawImage(canvas, 0, 0);
-    strokeLines(o, state.step, 1, { width: Math.max(2, W / 400), dots: true });
+    const st = stepAt(state.step);
+    if (st.kind === "line") paintPaper(o, W, H, false); else o.drawImage(canvas, 0, 0);
+    strokeLines(o, st, 1, { width: Math.max(2, W / 400), dots: true });
     o.restore();
     if (state.grid) {
       const cell = W / state.cols;

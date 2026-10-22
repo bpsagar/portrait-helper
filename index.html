@@ -69,6 +69,14 @@
         <svg id="linesSvg" aria-hidden="true"></svg>
         <svg id="gridSvg" aria-hidden="true"></svg>
       </div>
+      <div class="level" id="level" hidden>
+        <div class="level-dial" aria-hidden="true"><span class="level-ring"></span><span class="level-bubble" id="bubble"></span></div>
+        <div class="level-info">
+          <b id="levelDeg" aria-live="polite">0.0°</b>
+          <button class="chip small" id="calBtn" type="button" title="Lay the phone flat on your paper, then tap to level against it">Calibrate</button>
+          <button class="chip small" id="calReset" type="button" hidden title="Level against a flat table again">Reset</button>
+        </div>
+      </div>
       <div class="stage-hud">
         <div class="hud-left">
           <button class="chip hold" id="peekBtn" type="button" title="Hold to see the original (hold O)">Hold to peek</button>

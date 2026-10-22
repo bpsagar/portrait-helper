@@ -657,7 +657,7 @@
   const pointers = new Map();
   let pinch = null;
   stage.addEventListener("pointerdown", (e) => {
-    if (e.target.closest(".stage-hud") || locked) return;
+    if (e.target.closest(".stage-hud, .level") || locked) return;
     stage.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     stage.classList.add("dragging");
@@ -682,7 +682,7 @@
   };
   stage.addEventListener("pointerup", endPointer);
   stage.addEventListener("pointercancel", endPointer);
-  stage.addEventListener("dblclick", (e) => { if (!e.target.closest(".stage-hud") && !locked) fit(); });
+  stage.addEventListener("dblclick", (e) => { if (!e.target.closest(".stage-hud, .level") && !locked) fit(); });
   new ResizeObserver(() => { if (view.auto) fit(); }).observe(stage);
 
   $("zoomIn").onclick = () => zoomAt(1.3, ...centre());
@@ -701,6 +701,7 @@
   const cam = $("cam");
 
   async function setTracing(on) {
+    const motion = on ? askForMotion() : null;
     if (on) {
       try {
         if (!navigator.mediaDevices?.getUserMedia) throw new Error("unsupported");
@@ -723,9 +724,70 @@
     $("camBtn").setAttribute("aria-pressed", String(on));
     $("camBtn").textContent = on ? "Stop tracing" : "Trace with camera";
     $("seeWrap").hidden = !on; $("lockBtn").hidden = !on;
+    // Show the level only on devices that report tilt (phones and tablets, not laptops).
+    levelEl.hidden = true;
+    if (on) motion.then(() => setTimeout(() => { if (tracing && levelSeen) { levelEl.hidden = false; drawLevel(); } }, 600));
     paperEl.style.opacity = on ? state.see / 100 : "";
     render();
   }
+  // ───────── spirit level ─────────
+  // The tilt sensor gives the phone's angles to gravity. Parallel to the paper means the gravity
+  // direction, seen from the phone, matches a reference: straight down for paper flat on a table,
+  // or whatever was measured while the phone lay on the paper (Calibrate) for a sloped board.
+  const levelEl = $("level"), bubble = $("bubble");
+  let gravity = null, levelSeen = false, calibrating = 0;
+  const FLAT = [0, 0, 1];
+  let reference = store.get("pc.level") || FLAT;
+
+  // Gravity in the phone's own frame (x right, y toward the top edge, z out of the screen),
+  // from the W3C beta/gamma angles. Compass heading (alpha) drops out, so it never matters.
+  const toGravity = (beta, gamma) => {
+    const b = beta * Math.PI / 180, g = gamma * Math.PI / 180;
+    return [-Math.sin(g) * Math.cos(b), Math.sin(b), Math.cos(b) * Math.cos(g)];
+  };
+
+  function onOrientation(e) {
+    if (e.beta == null || e.gamma == null) return;
+    const g = toGravity(e.beta, e.gamma);
+    gravity = gravity ? gravity.map((v, i) => v + (g[i] - v) * 0.25) : g; // smooth out hand shake
+    levelSeen = true;
+    if (calibrating && --calibrating === 0) {
+      reference = gravity.slice();
+      store.set("pc.level", reference);
+      $("calReset").hidden = false;
+      toast("Calibrated to your paper. Hold the phone the same way round.");
+    }
+    if (tracing) drawLevel();
+  }
+
+  function drawLevel() {
+    if (!gravity) return;
+    const dot = gravity.reduce((sum, v, i) => sum + v * reference[i], 0);
+    const deg = Math.acos(Math.min(1, Math.max(-1, dot))) * 180 / Math.PI;
+    // The bubble floats to the high side, like a real level; 10° reaches the rim.
+    let dx = gravity[0] - reference[0], dy = gravity[1] - reference[1];
+    const a = ((screen.orientation && screen.orientation.angle) || 0) * Math.PI / 180;
+    [dx, dy] = [dx * Math.cos(a) + dy * Math.sin(a), -dx * Math.sin(a) + dy * Math.cos(a)];
+    const k = 22 / Math.sin(10 * Math.PI / 180), len = Math.hypot(dx, dy) * k, clamp = len > 22 ? 22 / len : 1;
+    bubble.style.transform = `translate(${(dx * k * clamp).toFixed(1)}px, ${(-dy * k * clamp).toFixed(1)}px)`;
+    $("levelDeg").textContent = deg.toFixed(1) + "°";
+    levelEl.dataset.state = deg <= 1.5 ? "ok" : deg <= 4 ? "near" : "off";
+  }
+
+  // iOS asks for permission, and only from a tap; call this first thing in the tap handler.
+  function askForMotion() {
+    const ask = window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission;
+    return ask ? ask.call(DeviceOrientationEvent).catch(() => "denied") : Promise.resolve("granted");
+  }
+  window.addEventListener("deviceorientation", onOrientation);
+
+  $("calBtn").onclick = () => { calibrating = 10; };
+  $("calReset").onclick = () => {
+    reference = FLAT; store.set("pc.level", null);
+    $("calReset").hidden = true; drawLevel();
+  };
+  $("calReset").hidden = reference === FLAT;
+
   function setLocked(on) {
     locked = on;
     stage.classList.toggle("locked", on);

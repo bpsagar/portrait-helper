@@ -247,3 +247,22 @@ input[type="range"] { width: 100%; accent-color: var(--chalk); height: 20px; mar
   .brand span { display: none; }
   .top-actions { gap: 4px; }
 }
+
+/* spirit level, shown while tracing */
+.level {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 2;
+  display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 8px;
+  border-radius: 999px; background: rgba(20, 18, 15, .78); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.12); --level: #e0694c;
+}
+.level[data-state="ok"] { --level: #7ec27a; }
+.level[data-state="near"] { --level: #e3b448; }
+.level-dial { position: relative; width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--level); background: rgba(0,0,0,.35); }
+.level-ring { position: absolute; inset: 50%; width: 16px; height: 16px; margin: -8px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.55); }
+.level-bubble {
+  position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px; border-radius: 50%;
+  background: var(--level); box-shadow: 0 0 8px var(--level); transition: background .2s;
+}
+.level-info { display: flex; align-items: center; gap: 8px; }
+.level-info b { font: 600 17px var(--sans); font-variant-numeric: tabular-nums; color: var(--level); min-width: 3.2em; }
+.chip.small { padding: 5px 10px; font-size: 12px; }

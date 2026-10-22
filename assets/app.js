@@ -3,7 +3,7 @@
 
   const $ = (id) => document.getElementById(id);
   const MAX_SIDE = 1400;
-  const LINE_SIDE = 360; // working size for block-in line detection
+  const LINE_SIDE = 480; // working size for block-in line detection
 
   const SAMPLES = [
     { id: "eyes", name: "Eye study", src: "assets/samples/eyes.jpg" },
@@ -22,7 +22,7 @@
     { name: "Envelope" },
     { name: "Big shapes", eps: 0.06, minArea: 0.012 },
     { name: "Subdivide", eps: 0.03, minArea: 0.005 },
-    { name: "Refine", eps: 0.015, minArea: 0.002, core: true },
+    { name: "Refine", eps: 0.01, minArea: 0.002, core: true },
   ];
   const L = LINE_PASSES.length;
 
@@ -304,21 +304,33 @@
   }
 
   function computeLines() {
-    const diag = Math.hypot(SW, SH), toFull = W / SW;
-    const b = boxBlur(slum, SW, SH, Math.max(1, Math.round((state.lineBlur / 100) * diag)));
-    const curve = toneCurve(b), n = state.n, h = Math.ceil(n / 2);
-    const v = b.map(curve);
-    // The shadow mass is exactly what value pass 1 fills; the core is the darker split inside it.
-    const shadowT = (h - 0.5) / (n - 1), coreT = Math.max(0.5, h - 1.5) / (n - 1);
+    const diag = Math.hypot(SW, SH), sx = W / SW, sy = H / SH, h = half();
     const bgMask = backgroundMask(slum, SW, SH);
-    const mk = (t) => { const m = new Uint8Array(v.length); for (let i = 0; i < v.length; i++) m[i] = v[i] < t && !bgMask[i] ? 1 : 0; return m; };
-    const shadowLoops = traceContours(mk(shadowT), SW, SH);
-    const coreLoops = traceContours(mk(coreT), SW, SH);
+    const r = Math.max(1, Math.round((state.lineBlur / 100) * diag));
+    // Trace the very pixels the value passes fill: the shadow mass (value pass 1) and the
+    // darker split inside it (value pass 2). Blurring that mask and cutting it at 50% drops
+    // small detail without sliding the edges of big shapes, as blurring the photo would.
+    const shapeOf = (below) => {
+      const cover = new Float32Array(SW * SH);
+      for (let y = 0; y < SH; y++) {
+        const y0 = Math.floor(y * sy), y1 = Math.max(y0 + 1, Math.floor((y + 1) * sy));
+        for (let x = 0; x < SW; x++) {
+          const x0 = Math.floor(x * sx), x1 = Math.max(x0 + 1, Math.floor((x + 1) * sx));
+          let hit = 0;
+          for (let yy = y0; yy < y1; yy++) for (let xx = x0; xx < x1; xx++) if (idx[yy * W + xx] < below) hit++;
+          cover[y * SW + x] = bgMask[y * SW + x] ? 0 : hit / ((y1 - y0) * (x1 - x0));
+        }
+      }
+      const soft = boxBlur(cover, SW, SH, r);
+      return traceContours(soft.map((c) => (c >= 0.5 ? 1 : 0)), SW, SH);
+    };
+    const shadowLoops = shapeOf(h);
+    const coreLoops = h > 1 ? shapeOf(h - 1) : [];
     const edgesTouched = (p) => {
       const t = Math.min(SW, SH) * 0.03;
       return [p.some(([x]) => x < t), p.some(([x]) => x > SW - 1 - t), p.some(([, y]) => y < t), p.some(([, y]) => y > SH - 1 - t)].filter(Boolean).length;
     };
-    const scale = (poly) => poly.map(([x, y]) => [(x + 0.5) * toFull, (y + 0.5) * toFull]);
+    const scale = (poly) => poly.map(([x, y]) => [(x + 0.5) * sx, (y + 0.5) * sy]);
     const detail = Math.pow(2, (5 - state.detail) / 3); // 1 = default, >1 fewer lines
     const simplify = (loops, eps, minArea) => loops
       .map((l) => rdpClosed(l, eps * diag * detail))
@@ -340,7 +352,7 @@
     const frac = count / (SW * SH);
     // When the "subject" is really the background, fall back to the outline of the shadow shapes.
     if (frac < 0.04 || frac > 0.85 || edgesTouched(envHull) >= 3) {
-      envHull = hull(simplify(shadowLoops, 0.03, 0.005).flat().map(([x, y]) => [x / toFull - 0.5, y / toFull - 0.5]));
+      envHull = hull(simplify(shadowLoops, 0.03, 0.005).flat().map(([x, y]) => [x / sx - 0.5, y / sy - 0.5]));
     }
     const env = envHull.length > 2 ? [scale(reduceTo(envHull, 9))] : [];
 
@@ -727,7 +739,7 @@
   };
   bind("values", "n", "valuesOut");
   bind("contrast", "contrast", "contrastOut", (v) => v + "%");
-  bind("squint", "squint", "squintOut", (v) => (v ? v : "off"), false);
+  bind("squint", "squint", "squintOut", (v) => (v ? v : "off"));
   bind("levels", "levels");
   bind("lineBlur", "lineBlur", "lineBlurOut", (v) => v + "%");
   bind("detail", "detail", "detailOut", detailLabel);

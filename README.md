@@ -1,9 +1,11 @@
-# Portrait.Coach
+# Portrait Coach
 
-## Deployment
+A step-by-step value study for portrait sketching. Drop in a reference photo; Portrait Coach flattens it into a few tones and walks you from the darkest shadow mass to the lightest light, one pass at a time.
+
+Plain HTML, CSS and JS. No build step. Photos never leave the browser.
 
 ```
-npm run build
-tar -cvf ./deploy.tar --exclude='*.map' ./nginx.conf ./captain-definition ./out/*
-caprover deploy -t ./deploy.tar
+python3 -m http.server   # then open http://localhost:8000
 ```
+
+Deployed to GitHub Pages by `.github/workflows/pages.yml` on every push to `main`.

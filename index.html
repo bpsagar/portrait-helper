@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Portrait Coach — build a portrait one value at a time</title>
+<meta name="description" content="Turn any reference photo into a step-by-step value study. Block in the shadows, then add the lights, one pass at a time.">
+<meta name="theme-color" content="#14120f">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="top">
+  <a class="brand" href="./" aria-label="Portrait Coach home">
+    <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><use href="assets/favicon.svg#mark"/></svg>
+    <span>Portrait <em>Coach</em></span>
+  </a>
+  <div class="top-actions">
+    <button class="btn ghost" id="openBtn" type="button">Open photo</button>
+    <button class="btn ghost" id="shareBtn" type="button" hidden>Copy link</button>
+    <button class="btn ghost only-narrow" id="panelBtn" type="button" hidden aria-expanded="false" aria-controls="panel">Setup</button>
+  </div>
+  <input type="file" id="fileInput" accept="image/*" hidden>
+</header>
+
+<!-- ───────── Empty state ───────── -->
+<main id="welcome" class="welcome">
+  <div class="welcome-copy">
+    <p class="eyebrow">A value study, one pass at a time</p>
+    <h1>Draw the shadows first.<br><em>The face follows.</em></h1>
+    <p class="lede">Drop in a reference photo. Portrait Coach flattens it into a handful of tones, then walks you from the darkest mass to the lightest light, so you only ever decide one thing at a time.</p>
+
+    <label class="drop" id="drop" tabindex="0">
+      <span class="drop-title">Drop a photo here</span>
+      <span class="drop-sub">or click to browse &middot; paste with <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>V</kbd></span>
+      <span class="drop-note">Your photo stays in your browser. Nothing is uploaded.</span>
+    </label>
+
+    <form class="url" id="urlForm">
+      <input id="urlInput" type="url" inputmode="url" placeholder="…or paste an image link" aria-label="Image URL">
+      <button class="btn" type="submit">Load</button>
+    </form>
+  </div>
+
+  <div class="welcome-side">
+    <p class="eyebrow">Try a sample</p>
+    <div class="samples" id="samples"></div>
+    <div id="recentWrap" hidden>
+      <p class="eyebrow">Your recent photos</p>
+      <div class="samples small" id="recent"></div>
+    </div>
+    <ol class="how">
+      <li><b>Simplify.</b> Choose how many values to work with.</li>
+      <li><b>Block in.</b> Fill the darkest shapes first, with one pencil.</li>
+      <li><b>Deepen, then lift.</b> Split the shadows, then add the lights.</li>
+    </ol>
+  </div>
+</main>
+
+<!-- ───────── Studio ───────── -->
+<div id="studio" class="studio" hidden>
+
+  <aside class="scale" aria-label="Value scale">
+    <h2 class="rail-title">Values</h2>
+    <ol id="scaleList" class="scale-list"></ol>
+    <p class="rail-foot">Tap a value to jump to the pass that introduces it.</p>
+  </aside>
+
+  <section class="stage-wrap">
+    <div class="stage" id="stage" aria-label="Reference">
+      <div class="paper" id="paper">
+        <canvas id="orig" aria-hidden="true"></canvas>
+        <canvas id="canvas" role="img" aria-label="Current value pass"></canvas>
+        <svg id="gridSvg" aria-hidden="true"></svg>
+      </div>
+      <div class="stage-hud">
+        <button class="chip hold" id="peekBtn" type="button" title="Hold to see the original (hold O)">Hold to peek</button>
+        <div class="zoom">
+          <button class="chip icon" id="zoomOut" type="button" aria-label="Zoom out">−</button>
+          <button class="chip" id="zoomFit" type="button" aria-label="Fit to screen">Fit</button>
+          <button class="chip icon" id="zoomIn" type="button" aria-label="Zoom in">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="coach" aria-live="polite">
+      <div class="coach-head">
+        <p class="pass-no" id="passNo"></p>
+        <h2 id="passTitle"></h2>
+      </div>
+      <p id="passText" class="pass-text"></p>
+      <div class="coach-nav">
+        <button class="btn ghost round" id="prev" type="button" aria-label="Previous pass">←</button>
+        <div class="progress" id="progress" role="tablist" aria-label="Passes"></div>
+        <button class="btn primary" id="next" type="button">Next pass →</button>
+      </div>
+    </div>
+  </section>
+
+  <aside class="panel" id="panel" aria-label="Setup">
+    <section>
+      <h3>Simplify</h3>
+      <label class="field">
+        <span>Values <output id="valuesOut"></output></span>
+        <input type="range" id="values" min="3" max="10" step="1">
+      </label>
+      <label class="field">
+        <span>Contrast <output id="contrastOut"></output></span>
+        <input type="range" id="contrast" min="50" max="180" step="5">
+      </label>
+      <label class="field">
+        <span>Squint <output id="squintOut"></output></span>
+        <input type="range" id="squint" min="0" max="12" step="1">
+      </label>
+      <label class="check"><input type="checkbox" id="levels"> <span>Auto-levels <small>stretch the photo to use the full range</small></span></label>
+    </section>
+
+    <section>
+      <h3>Compose</h3>
+      <label class="check"><input type="checkbox" id="grid"> <span>Grid <small>transfer proportions cell by cell</small></span></label>
+      <label class="field sub" id="gridField">
+        <span>Columns <output id="gridOut"></output></span>
+        <input type="range" id="gridCols" min="3" max="16" step="1">
+      </label>
+      <label class="check"><input type="checkbox" id="flip"> <span>Mirror <small>a fresh eye catches lopsided drawings</small></span></label>
+    </section>
+
+    <section>
+      <h3>Paper &amp; pencil</h3>
+      <div class="seg" id="paperSeg" role="radiogroup" aria-label="Paper tone">
+        <button type="button" role="radio" data-paper="warm">Warm</button>
+        <button type="button" role="radio" data-paper="cool">Cool</button>
+        <button type="button" role="radio" data-paper="gray">Mid-gray</button>
+      </div>
+      <label class="check"><input type="checkbox" id="leads" checked> <span>Suggest pencil grades</span></label>
+    </section>
+
+    <section class="panel-foot">
+      <button class="btn block" id="saveBtn" type="button">Save this pass as PNG</button>
+      <button class="btn ghost block" id="newBtn" type="button">Choose another photo</button>
+      <p class="keys"><kbd>←</kbd><kbd>→</kbd> passes &nbsp; <kbd>G</kbd> grid &nbsp; <kbd>M</kbd> mirror &nbsp; <kbd>O</kbd> hold for original</p>
+    </section>
+  </aside>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+<script src="assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <g id="mark">
+      <rect x="2" y="2" width="28" height="28" rx="7" fill="#1b1814"/>
+      <circle cx="16" cy="16" r="9" fill="#efe8da"/>
+      <path d="M16 7a9 9 0 0 0 0 18z" fill="#6f665a"/>
+      <path d="M16 7a9 9 0 0 0-6.4 15.4L16 16z" fill="#2a251f"/>
+      <circle cx="16" cy="16" r="9" fill="none" stroke="#c4553a" stroke-width="1.5"/>
+    </g>
+  </defs>
+  <use href="#mark"/>
+</svg>

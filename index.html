@@ -4,36 +4,67 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Portrait Coach</title>
-<meta name="description" content="See your reference photo over the camera view and trace it onto paper.">
+<meta name="description" content="Crop a reference photo, see it in tones, and trace it onto paper through your camera.">
 <meta name="theme-color" content="#14120f">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 
-<main class="stage" id="stage">
-  <video id="cam" playsinline muted autoplay hidden></video>
-  <img id="photo" alt="Reference photo" hidden>
-
-  <div class="empty" id="empty">
-    <button class="btn primary big" id="pickBtn" type="button">Choose a photo</button>
-    <p>or drop / paste one here. It stays on your device.</p>
+<!-- Step 1: crop to a square and adjust -->
+<section class="screen" id="prep">
+  <main class="stage" id="prepStage">
+    <img id="src" alt="Photo being cropped" hidden>
+    <div class="shade" id="shade" hidden></div>
+    <div class="frame" id="frame" hidden></div>
+    <div class="empty" id="empty">
+      <button class="btn primary big" id="pickBtn" type="button">Choose a photo</button>
+      <p>or drop / paste one here. It stays on your device.</p>
+    </div>
+  </main>
+  <div class="panel" id="prepPanel" hidden>
+    <label class="slider" for="bright"><span>Brightness</span><input type="range" id="bright" min="50" max="150" step="1"><output id="brightOut"></output></label>
+    <label class="slider" for="contrast"><span>Contrast</span><input type="range" id="contrast" min="50" max="200" step="1"><output id="contrastOut"></output></label>
+    <div class="row">
+      <button class="chip" id="bwBtn" type="button" aria-pressed="true">B&amp;W</button>
+      <button class="chip" id="adjReset" type="button">Reset</button>
+      <span class="grow"></span>
+      <button class="chip" id="changeBtn" type="button">New photo</button>
+      <button class="btn primary" id="doneBtn" type="button">Done</button>
+    </div>
   </div>
+</section>
 
-  <div class="level" id="level" hidden>
-    <div class="dial" aria-hidden="true"><span class="ring"></span><span class="bubble" id="bubble"></span></div>
-    <b id="levelDeg" aria-live="polite">0.0°</b>
-    <button class="chip" id="calBtn" type="button" title="Lay the phone flat on your paper, then tap">Calibrate</button>
-    <button class="chip" id="calReset" type="button" hidden title="Level against a flat table again">Reset</button>
-  </div>
-</main>
-
-<nav class="bar" id="bar">
-  <button class="chip" id="photoBtn" type="button">Photo</button>
-  <button class="chip" id="camBtn" type="button" aria-pressed="false">Camera</button>
-  <label class="see" for="see"><span>See-through</span><input type="range" id="see" min="0" max="100" step="5" value="50"></label>
-  <button class="chip" id="lockBtn" type="button" aria-pressed="false" title="Stop accidental moves while you trace">Lock</button>
-</nav>
+<!-- Step 2: see-through tracing -->
+<section class="screen" id="trace" hidden>
+  <main class="stage" id="stage">
+    <video id="cam" playsinline muted autoplay hidden></video>
+    <canvas id="photo" aria-label="Reference photo"></canvas>
+    <div class="level" id="level" hidden>
+      <div class="dial" aria-hidden="true"><span class="ring"></span><span class="bubble" id="bubble"></span></div>
+      <b id="levelDeg" aria-live="polite">0.0°</b>
+      <button class="chip" id="calBtn" type="button" title="Lay the phone flat on your paper, then tap">Calibrate</button>
+      <button class="chip" id="calReset" type="button" hidden title="Level against a flat table again">Reset</button>
+    </div>
+  </main>
+  <nav class="panel" aria-label="Tracing">
+    <div class="row">
+      <button class="chip" id="editBtn" type="button">Edit</button>
+      <button class="chip" id="camBtn" type="button" aria-pressed="false">Camera</button>
+      <label class="slider" for="see"><span>See-through</span><input type="range" id="see" min="0" max="100" step="5"></label>
+      <button class="chip" id="lockBtn" type="button" aria-pressed="false" title="Stop accidental moves while you trace">Lock</button>
+    </div>
+    <div class="row">
+      <span class="label">Tones</span>
+      <div class="seg" id="tones" role="radiogroup" aria-label="Tones">
+        <button type="button" role="radio" data-tones="0">Photo</button>
+        <button type="button" role="radio" data-tones="3">3</button>
+        <button type="button" role="radio" data-tones="5">5</button>
+        <button type="button" role="radio" data-tones="8">8</button>
+      </div>
+    </div>
+  </nav>
+</section>
 
 <input type="file" id="fileInput" accept="image/*" hidden>
 <div class="toast" id="toast" role="status"></div>

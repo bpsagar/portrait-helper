@@ -4,8 +4,9 @@
   const $ = (id) => document.getElementById(id);
   const src = $("src"), photo = $("photo"), cam = $("cam");
   const prepStage = $("prepStage"), stage = $("stage");
-  const DISPLAY = 1000; // the cropped square always shows at this CSS size, so re-editing keeps its place
-  const OUT_MAX = 1600; // largest cropped square kept, in pixels
+  const DISPLAY = 1000; // the crop's longest side always shows at this CSS size, so re-editing keeps its place
+  const OUT_MAX = 1600; // longest side of the cropped image kept, in pixels
+  const RATIOS = { "1:1": 1, "4:5": 4 / 5, "3:4": 3 / 4, "2:3": 2 / 3, A4: 1 / Math.SQRT2 }; // width / height, portrait
 
   const store = {
     get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
@@ -19,7 +20,7 @@
   }
 
   // ───────── gestures ─────────
-  // One finger drags; two fingers pinch (and twist); the wheel zooms; double-tap resets.
+  // One finger drags; two fingers pinch (and twist); the wheel zooms; double-tap resets, where offered.
   function gestures(el, h) {
     const pointers = new Map();
     let pair = null;
@@ -53,54 +54,70 @@
       e.preventDefault();
       if (h.enabled()) h.zoom(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0015), 0);
     }, { passive: false });
-    el.addEventListener("dblclick", (e) => { if (h.enabled() && !e.target.closest(".level")) h.reset(); });
+    if (h.reset) el.addEventListener("dblclick", (e) => { if (h.enabled()) h.reset(); });
   }
 
   // ───────── step 1: crop and adjust ─────────
-  // The crop is a square in source pixels: centre (u, v) and side L. The square frame stays fixed
-  // on screen and the photo moves under it.
+  // The crop is a rectangle of the chosen shape in source pixels: centre (u, v) and height h
+  // (its width is h × ratio). The frame stays fixed on screen and the photo moves under it.
   let crop = null;
   const adj = { b: 100, c: 100, bw: true, ...(store.get("pc.adj") || {}) };
+  const shape = { ratio: "1:1", wide: false, ...(store.get("pc.shape") || {}) };
+  const ratio = () => (shape.wide ? 1 / RATIOS[shape.ratio] : RATIOS[shape.ratio]);
 
   function frameRect() {
-    const w = prepStage.clientWidth, h = prepStage.clientHeight, side = Math.max(40, Math.min(w, h) - 48);
-    return { x: (w - side) / 2, y: (h - side) / 2, side };
+    const r = ratio(), aw = Math.max(40, prepStage.clientWidth - 48), ah = Math.max(40, prepStage.clientHeight - 48);
+    const w = Math.min(aw, ah * r), h = w / r;
+    return { x: (prepStage.clientWidth - w) / 2, y: (prepStage.clientHeight - h) / 2, w, h };
   }
   function clampCrop() {
-    const W = src.naturalWidth, H = src.naturalHeight;
-    crop.L = Math.min(Math.min(W, H), Math.max(32, crop.L));
-    crop.u = Math.min(W - crop.L / 2, Math.max(crop.L / 2, crop.u));
-    crop.v = Math.min(H - crop.L / 2, Math.max(crop.L / 2, crop.v));
+    const W = src.naturalWidth, H = src.naturalHeight, r = ratio();
+    crop.h = Math.min(Math.min(H, W / r), Math.max(32, crop.h));
+    const w = crop.h * r;
+    crop.u = Math.min(W - w / 2, Math.max(w / 2, crop.u));
+    crop.v = Math.min(H - crop.h / 2, Math.max(crop.h / 2, crop.v));
   }
   function layoutCrop() {
     if (!crop) return;
     clampCrop();
-    const f = frameRect(), k = f.side / crop.L;
-    Object.assign($("frame").style, { left: f.x + "px", top: f.y + "px", width: f.side + "px", height: f.side + "px" });
+    const f = frameRect(), k = f.h / crop.h;
+    Object.assign($("frame").style, { left: f.x + "px", top: f.y + "px", width: f.w + "px", height: f.h + "px" });
     const gapX = f.x + "px", gapY = f.y + "px";
     Object.assign($("shade").style, { borderLeftWidth: gapX, borderRightWidth: gapX, borderTopWidth: gapY, borderBottomWidth: gapY });
-    src.style.transform = `translate(${f.x + f.side / 2 - crop.u * k}px, ${f.y + f.side / 2 - crop.v * k}px) scale(${k})`;
+    src.style.transform = `translate(${f.x + f.w / 2 - crop.u * k}px, ${f.y + f.h / 2 - crop.v * k}px) scale(${k})`;
     store.set("pc.crop", crop);
   }
-  const defaultCrop = () => {
-    const W = src.naturalWidth, H = src.naturalHeight;
-    crop = { u: W / 2, v: H / 2, L: Math.min(W, H) };
-  };
+  // Largest crop of the current shape, centred.
+  const defaultCrop = () => { crop = { u: src.naturalWidth / 2, v: src.naturalHeight / 2, h: Infinity }; clampCrop(); };
 
   gestures(prepStage, {
     enabled: () => !!crop,
-    pan(dx, dy) { const k = frameRect().side / crop.L; crop.u -= dx / k; crop.v -= dy / k; layoutCrop(); },
+    pan(dx, dy) { const k = frameRect().h / crop.h; crop.u -= dx / k; crop.v -= dy / k; layoutCrop(); },
     zoom(mx, my, f) {
-      const r = prepStage.getBoundingClientRect(), fr = frameRect(), k = fr.side / crop.L;
-      const ox = mx - r.left - (fr.x + fr.side / 2), oy = my - r.top - (fr.y + fr.side / 2);
+      const r = prepStage.getBoundingClientRect(), fr = frameRect(), k = fr.h / crop.h;
+      const ox = mx - r.left - (fr.x + fr.w / 2), oy = my - r.top - (fr.y + fr.h / 2);
       const px = crop.u + ox / k, py = crop.v + oy / k; // source point under the fingers stays put
-      crop.L /= f; clampCrop();
-      const k2 = fr.side / crop.L;
+      crop.h /= f; clampCrop();
+      const k2 = fr.h / crop.h;
       crop.u = px - ox / k2; crop.v = py - oy / k2;
       layoutCrop();
     },
     reset() { defaultCrop(); layoutCrop(); },
   });
+
+  // A new shape gets the largest crop that fits, around the same centre.
+  function applyShape(resize) {
+    if (resize && crop) crop.h = Infinity;
+    document.querySelectorAll("#ratios button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.ratio === shape.ratio)));
+    $("turnBtn").setAttribute("aria-pressed", String(shape.wide));
+    store.set("pc.shape", shape);
+    layoutCrop();
+  }
+  $("ratios").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-ratio]");
+    if (b) { shape.ratio = b.dataset.ratio; applyShape(true); }
+  });
+  $("turnBtn").onclick = () => { shape.wide = !shape.wide; applyShape(true); };
 
   // The preview uses CSS filters; bake() applies the same maths to the pixels.
   function applyAdj() {
@@ -131,8 +148,9 @@
       src.style.height = src.naturalHeight + "px";
       src.hidden = false; $("frame").hidden = false; $("shade").hidden = false; $("empty").hidden = true; $("prepPanel").hidden = false;
       crop = keep && store.get("pc.crop");
+      if (crop && crop.h == null) { crop.h = crop.L; delete crop.L; } // saved by the square-only version
       if (!crop) defaultCrop();
-      applyAdj();
+      applyAdj(); applyShape();
       if (keep && store.get("pc.screen") === "trace") showTrace(); else showPrep();
     };
     src.onerror = () => toast("Couldn't open that image.");
@@ -168,17 +186,18 @@
     if (f) loadFile(f);
   });
 
-  // ───────── bake the square ─────────
+  // ───────── bake the crop ─────────
   // Crop, then brightness → contrast → greyscale, matching the CSS filter preview.
   let baked = null, lum = null;
   function bake() {
-    const O = Math.max(1, Math.min(OUT_MAX, Math.round(crop.L)));
+    const cw = crop.h * ratio(), s = Math.min(1, OUT_MAX / Math.max(cw, crop.h));
+    const ow = Math.max(1, Math.round(cw * s)), oh = Math.max(1, Math.round(crop.h * s));
     const c = document.createElement("canvas");
-    c.width = c.height = O;
+    c.width = ow; c.height = oh;
     const x = c.getContext("2d", { willReadFrequently: true });
-    x.drawImage(src, crop.u - crop.L / 2, crop.v - crop.L / 2, crop.L, crop.L, 0, 0, O, O);
-    const img = x.getImageData(0, 0, O, O), d = img.data, b = adj.b / 100, k = adj.c / 100;
-    lum = new Uint8ClampedArray(O * O);
+    x.drawImage(src, crop.u - cw / 2, crop.v - crop.h / 2, cw, crop.h, 0, 0, ow, oh);
+    const img = x.getImageData(0, 0, ow, oh), d = img.data, b = adj.b / 100, k = adj.c / 100;
+    lum = new Uint8ClampedArray(ow * oh);
     for (let i = 0, j = 0; i < d.length; i += 4, j++) {
       let r = d[i] * b, g = d[i + 1] * b, bl = d[i + 2] * b;
       r = (r - 127.5) * k + 127.5; g = (g - 127.5) * k + 127.5; bl = (bl - 127.5) * k + 127.5;
@@ -192,9 +211,9 @@
   }
 
   // ───────── step 2: trace ─────────
-  // The square is placed by its centre offset from the stage centre, a rotation and a scale.
+  // The crop is placed by its centre offset from the stage centre, a rotation and a scale.
   const view = { x: 0, y: 0, r: 0, k: 1 };
-  let locked = false, saveTimer, tones = store.get("pc.tones") ?? 0;
+  let saveTimer, tones = store.get("pc.tones") ?? 0;
 
   function apply() {
     photo.style.transform = `translate(-50%, -50%) translate(${view.x}px, ${view.y}px) rotate(${view.r}rad) scale(${view.k})`;
@@ -202,20 +221,22 @@
     saveTimer = setTimeout(() => store.set("pc.view", view), 300);
   }
   function fit() {
-    Object.assign(view, { x: 0, y: 0, r: 0, k: Math.min(stage.clientWidth, stage.clientHeight) / DISPLAY * 0.9 });
+    const w = parseFloat(photo.style.width), h = parseFloat(photo.style.height);
+    Object.assign(view, { x: 0, y: 0, r: 0, k: Math.min(stage.clientWidth / w, stage.clientHeight / h) * 0.9 });
     apply();
   }
 
-  // Draw the square as the photo itself, or flattened to a few evenly spaced greys.
+  // Draw the crop as the photo itself, or flattened to a few evenly spaced greys.
   function drawPhoto() {
     if (!baked) return;
-    const O = baked.width;
-    photo.width = photo.height = O;
-    photo.style.width = photo.style.height = DISPLAY + "px";
+    const ow = baked.width, oh = baked.height, long = Math.max(ow, oh);
+    photo.width = ow; photo.height = oh;
+    photo.style.width = DISPLAY * ow / long + "px";
+    photo.style.height = DISPLAY * oh / long + "px";
     const x = photo.getContext("2d");
     if (!tones) { x.drawImage(baked, 0, 0); }
     else {
-      const img = x.createImageData(O, O), d = img.data, n = tones;
+      const img = x.createImageData(ow, oh), d = img.data, n = tones;
       for (let i = 0, j = 0; j < lum.length; i += 4, j++) {
         const v = Math.round(Math.round((lum[j] / 255) * (n - 1)) * 255 / (n - 1));
         d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255;
@@ -243,8 +264,9 @@
   $("doneBtn").onclick = showTrace;
   $("editBtn").onclick = showPrep;
 
+  // No double-tap reset here: one stray double-tap would undo the alignment with the paper.
   gestures(stage, {
-    enabled: () => !locked,
+    enabled: () => true,
     pan(dx, dy) { view.x += dx; view.y += dy; apply(); },
     // Scale by f and rotate by dr around the screen point (mx, my).
     zoom(mx, my, f, dr) {
@@ -255,14 +277,7 @@
       view.k *= f; view.r += dr;
       apply();
     },
-    reset: fit,
   });
-
-  $("lockBtn").onclick = () => {
-    locked = !locked;
-    $("lockBtn").setAttribute("aria-pressed", String(locked));
-    $("lockBtn").textContent = locked ? "Locked" : "Lock";
-  };
 
   // ───────── see-through ─────────
   let camOn = false, stream = null, wakeLock = null;

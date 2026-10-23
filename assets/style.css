@@ -73,11 +73,12 @@ button, input { font: inherit; color: inherit; }
 .slider input { flex: 1; min-width: 60px; accent-color: var(--chalk); }
 .slider output { min-width: 2.6em; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
 .seg { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: #000; border: 1px solid var(--line); }
-.seg button { appearance: none; cursor: pointer; border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; font-size: 13px; color: var(--ink-2); }
+.seg button { appearance: none; cursor: pointer; border: 0; background: transparent; padding: 6px 12px; border-radius: 999px; font-size: 13px; color: var(--ink-2); }
 .seg button[aria-checked="true"] { background: var(--chalk); color: #fff; }
 @media (max-width: 420px) {
   #trace .slider span { display: none; }
   .row .chip { padding: 8px 12px; }
+  .seg button { padding: 6px 9px; }
 }
 
 /* spirit level */

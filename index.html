@@ -64,13 +64,10 @@
       <label class="slider" for="see"><span>See-through</span><input type="range" id="see" min="0" max="100" step="5"></label>
     </div>
     <div class="row">
-      <span class="label">Tones</span>
-      <div class="seg" id="tones" role="radiogroup" aria-label="Tones">
-        <button type="button" role="radio" data-tones="0">Photo</button>
-        <button type="button" role="radio" data-tones="3">3</button>
-        <button type="button" role="radio" data-tones="6">6</button>
-        <button type="button" role="radio" data-tones="9">9</button>
-      </div>
+      <button class="chip" id="toneBack" type="button" aria-label="Previous tone step">←</button>
+      <span class="step" id="toneStep" aria-live="polite"></span>
+      <button class="chip" id="toneNext" type="button" aria-label="Next tone step">→</button>
+      <div class="dots" id="toneDots" aria-hidden="true"></div>
     </div>
   </nav>
 </section>

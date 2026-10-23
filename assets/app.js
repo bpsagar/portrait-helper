@@ -332,10 +332,19 @@
 
   // ───────── see-through ─────────
   let camOn = false, stream = null, wakeLock = null;
-  const see = $("see");
+  // With the camera on, the photo blends with the live view: Multiply, for instance, lets white
+  // show the paper through untouched while darks darken it. See-through sets the strength.
+  const see = $("see"), blend = $("blend");
   see.value = store.get("pc.see") ?? 50;
-  const applySee = () => { photo.style.opacity = camOn ? see.value / 100 : 1; };
+  blend.value = store.get("pc.blend") || "normal";
+  const applySee = () => {
+    photo.style.opacity = camOn ? see.value / 100 : 1;
+    photo.style.mixBlendMode = camOn ? blend.value : "normal";
+    blend.disabled = !camOn;
+  };
   see.addEventListener("input", () => { store.set("pc.see", +see.value); applySee(); });
+  blend.addEventListener("change", () => { store.set("pc.blend", blend.value); applySee(); });
+  applySee();
 
   // ───────── camera ─────────
   async function setCamera(on) {

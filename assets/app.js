@@ -213,7 +213,7 @@
   // ───────── step 2: trace ─────────
   // The crop is placed by its centre offset from the stage centre, a rotation and a scale.
   const view = { x: 0, y: 0, r: 0, k: 1 };
-  let saveTimer, tones = { 5: 6, 8: 9 }[store.get("pc.tones")] ?? store.get("pc.tones") ?? 0;
+  let saveTimer, step = store.get("pc.step") ?? 0;
 
   function apply() {
     photo.style.transform = `translate(-50%, -50%) translate(${view.x}px, ${view.y}px) rotate(${view.r}rad) scale(${view.k})`;
@@ -226,10 +226,23 @@
     apply();
   }
 
-  // Draw the crop as the photo itself, or as tones built like pencil layers. The range is cut into
-  // n equal zones and each zone shows its lightest value: at 3, light stays white paper, mid is a
-  // light grey and dark a mid-dark grey. 6 and 9 split each of those zones into 2 or 3; the lightest
-  // part keeps the tone it had at 3 and the rest gets darker layers, so nothing ever gets lighter.
+  // Tones are built like pencil layers over 9 equal levels: 3 zones (dark, mid, light), each split
+  // into thirds. Each step darkens one zone's lower thirds, so no step ever lightens anything:
+  //   1–2  the dark and mid zones at their lightest value (light stays white paper)
+  //   3–5  dark, mid, light: the lower two thirds darken to the middle value
+  //   6–8  dark, mid, light: the lowest third darkens to the darkest value
+  // A step [zone, third] sets every level of that zone up to that third to the third's value.
+  const STEPS = [[0, 2], [1, 2], [0, 1], [1, 1], [2, 1], [0, 0], [1, 0], [2, 0]];
+  const levelValue = (z) => Math.round((z + 1) * 255 / 9);
+  function stepLut(n) {
+    const lut = new Array(9).fill(255);
+    for (const [zone, third] of STEPS.slice(0, n)) {
+      for (let s = 0; s <= third; s++) lut[zone * 3 + s] = levelValue(zone * 3 + third);
+    }
+    return lut;
+  }
+
+  // Draw the crop as the photo itself (step 0) or as the tones after a given step.
   function drawPhoto() {
     if (!baked) return;
     const ow = baked.width, oh = baked.height, long = Math.max(ow, oh);
@@ -237,22 +250,31 @@
     photo.style.width = DISPLAY * ow / long + "px";
     photo.style.height = DISPLAY * oh / long + "px";
     const x = photo.getContext("2d");
-    if (!tones) { x.drawImage(baked, 0, 0); }
+    if (!step) { x.drawImage(baked, 0, 0); }
     else {
-      const img = x.createImageData(ow, oh), d = img.data, n = tones;
+      const img = x.createImageData(ow, oh), d = img.data, lut = stepLut(step);
       for (let i = 0, j = 0; j < lum.length; i += 4, j++) {
-        const zone = Math.min(n - 1, Math.floor(lum[j] * n / 256));
-        const v = Math.round((zone + 1) * 255 / n);
+        const v = lut[Math.min(8, Math.floor(lum[j] * 9 / 256))];
         d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255;
       }
       x.putImageData(img, 0, 0);
     }
-    document.querySelectorAll("#tones button").forEach((b) => b.setAttribute("aria-checked", String(+b.dataset.tones === tones)));
+    $("toneStep").textContent = step ? `${step} / ${STEPS.length}` : "Photo";
+    $("toneBack").disabled = step === 0;
+    $("toneNext").disabled = step === STEPS.length;
+    $("toneDots").replaceChildren(...STEPS.map((_, i) => {
+      const dot = document.createElement("span");
+      dot.className = (i + 1 === step ? "on" : i + 1 < step ? "done" : "") + (i === 2 || i === 5 ? " gap" : "");
+      return dot;
+    }));
   }
-  $("tones").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-tones]");
-    if (!b) return;
-    tones = +b.dataset.tones; store.set("pc.tones", tones); drawPhoto();
+  const goStep = (n) => { step = Math.max(0, Math.min(STEPS.length, n)); store.set("pc.step", step); drawPhoto(); };
+  $("toneBack").onclick = () => goStep(step - 1);
+  $("toneNext").onclick = () => goStep(step + 1);
+  document.addEventListener("keydown", (e) => {
+    if ($("trace").hidden || e.target.matches("input")) return;
+    if (e.key === "ArrowRight") goStep(step + 1);
+    else if (e.key === "ArrowLeft") goStep(step - 1);
   });
 
   function showTrace() {

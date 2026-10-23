@@ -6,6 +6,12 @@
   const prepStage = $("prepStage"), stage = $("stage");
   const DISPLAY = 1000; // the crop's longest side always shows at this CSS size, so re-editing keeps its place
   const OUT_MAX = 1600; // longest side of the cropped image kept, in pixels
+  const SAMPLES = [
+    { name: "Eye", src: "assets/samples/eyes.jpg" },
+    { name: "Three-quarter portrait", src: "assets/samples/akram-deptq.jpg" },
+    { name: "Portrait", src: "assets/samples/messi.jpg" },
+    { name: "Portrait", src: "assets/samples/ronaldo.jpg" },
+  ];
   const RATIOS = { "1:1": 1, "4:5": 4 / 5, "3:4": 3 / 4, "2:3": 2 / 3, A4: 1 / Math.SQRT2 }; // width / height, portrait
 
   const store = {
@@ -29,7 +35,7 @@
       return { mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, d: Math.hypot(b.x - a.x, b.y - a.y), a: Math.atan2(b.y - a.y, b.x - a.x) };
     };
     el.addEventListener("pointerdown", (e) => {
-      if (!h.enabled() || e.target.closest(".level")) return;
+      if (!h.enabled() || e.target.closest("button, .level, .empty")) return;
       el.setPointerCapture(e.pointerId);
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pointers.size === 2) pair = pairOf();
@@ -159,24 +165,43 @@
 
   function loadFile(file) {
     if (!file || !file.type.startsWith("image/")) return toast("That doesn't look like an image.");
-    const url = URL.createObjectURL(file), img = new Image();
+    loadUrl(URL.createObjectURL(file), true);
+  }
+
+  function loadUrl(url, revoke) {
+    const img = new Image();
     img.onload = () => {
       const s = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
       const c = document.createElement("canvas");
       c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
       c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(url);
+      if (revoke) URL.revokeObjectURL(url);
       const data = c.toDataURL("image/jpeg", 0.9);
       store.set("pc.src", data);
       store.set("pc.crop", null); store.set("pc.view", null);
       openSource(data, false);
     };
-    img.onerror = () => { URL.revokeObjectURL(url); toast("Couldn't open that image."); };
+    img.onerror = () => { if (revoke) URL.revokeObjectURL(url); toast("Couldn't open that image."); };
     img.src = url;
   }
 
+  // The picker: choose from the device, or start from a sample.
+  $("samples").replaceChildren(...SAMPLES.map((s) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "sample"; b.title = s.name; b.setAttribute("aria-label", s.name);
+    const im = document.createElement("img"); im.src = s.src; im.alt = ""; b.appendChild(im);
+    b.onclick = () => loadUrl(s.src, false);
+    return b;
+  }));
+  function openPicker() {
+    $("empty").hidden = false; $("prepPanel").hidden = true;
+    $("cancelPick").hidden = src.hidden;
+  }
+  $("cancelPick").onclick = () => { $("empty").hidden = true; $("prepPanel").hidden = false; };
+
   const fileInput = $("fileInput");
-  $("pickBtn").onclick = $("changeBtn").onclick = () => fileInput.click();
+  $("pickBtn").onclick = () => fileInput.click();
+  $("changeBtn").onclick = openPicker;
   fileInput.onchange = () => { loadFile(fileInput.files[0]); fileInput.value = ""; };
   document.addEventListener("dragover", (e) => { e.preventDefault(); prepStage.classList.add("over"); });
   document.addEventListener("dragleave", (e) => { if (!e.relatedTarget) prepStage.classList.remove("over"); });

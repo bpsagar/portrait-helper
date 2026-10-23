@@ -213,7 +213,7 @@
   // ───────── step 2: trace ─────────
   // The crop is placed by its centre offset from the stage centre, a rotation and a scale.
   const view = { x: 0, y: 0, r: 0, k: 1 };
-  let saveTimer, tones = store.get("pc.tones") ?? 0;
+  let saveTimer, tones = { 5: 6, 8: 9 }[store.get("pc.tones")] ?? store.get("pc.tones") ?? 0;
 
   function apply() {
     photo.style.transform = `translate(-50%, -50%) translate(${view.x}px, ${view.y}px) rotate(${view.r}rad) scale(${view.k})`;
@@ -226,7 +226,10 @@
     apply();
   }
 
-  // Draw the crop as the photo itself, or flattened to a few evenly spaced greys.
+  // Draw the crop as the photo itself, or as tones built like pencil layers. The range is cut into
+  // n equal zones and each zone shows its lightest value: at 3, light stays white paper, mid is a
+  // light grey and dark a mid-dark grey. 6 and 9 split each of those zones into 2 or 3; the lightest
+  // part keeps the tone it had at 3 and the rest gets darker layers, so nothing ever gets lighter.
   function drawPhoto() {
     if (!baked) return;
     const ow = baked.width, oh = baked.height, long = Math.max(ow, oh);
@@ -238,7 +241,8 @@
     else {
       const img = x.createImageData(ow, oh), d = img.data, n = tones;
       for (let i = 0, j = 0; j < lum.length; i += 4, j++) {
-        const v = Math.round(Math.round((lum[j] / 255) * (n - 1)) * 255 / (n - 1));
+        const zone = Math.min(n - 1, Math.floor(lum[j] * n / 256));
+        const v = Math.round((zone + 1) * 255 / n);
         d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255;
       }
       x.putImageData(img, 0, 0);

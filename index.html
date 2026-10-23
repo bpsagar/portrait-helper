@@ -64,6 +64,16 @@
     <div class="row">
       <button class="chip" id="editBtn" type="button">Edit</button>
       <button class="chip" id="camBtn" type="button" aria-pressed="false">Camera</button>
+      <select class="chip" id="blend" aria-label="Blend with camera" title="How the photo mixes with the camera view">
+        <option value="normal">Normal</option>
+        <option value="multiply">Multiply</option>
+        <option value="darken">Darken</option>
+        <option value="color-burn">Colour burn</option>
+        <option value="overlay">Overlay</option>
+        <option value="soft-light">Soft light</option>
+        <option value="screen">Screen</option>
+        <option value="difference">Difference</option>
+      </select>
       <label class="slider" for="see"><span>See-through</span><input type="range" id="see" min="0" max="100" step="5"></label>
     </div>
     <div class="row">

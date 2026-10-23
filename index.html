@@ -11,7 +11,7 @@
 </head>
 <body>
 
-<!-- Step 1: crop to a square and adjust -->
+<!-- Step 1: crop to a shape and adjust -->
 <section class="screen" id="prep">
   <main class="stage" id="prepStage">
     <img id="src" alt="Photo being cropped" hidden>
@@ -25,6 +25,16 @@
   <div class="panel" id="prepPanel" hidden>
     <label class="slider" for="bright"><span>Brightness</span><input type="range" id="bright" min="50" max="150" step="1"><output id="brightOut"></output></label>
     <label class="slider" for="contrast"><span>Contrast</span><input type="range" id="contrast" min="50" max="200" step="1"><output id="contrastOut"></output></label>
+    <div class="row">
+      <div class="seg" id="ratios" role="radiogroup" aria-label="Crop shape">
+        <button type="button" role="radio" data-ratio="1:1">1:1</button>
+        <button type="button" role="radio" data-ratio="4:5">4:5</button>
+        <button type="button" role="radio" data-ratio="3:4">3:4</button>
+        <button type="button" role="radio" data-ratio="2:3">2:3</button>
+        <button type="button" role="radio" data-ratio="A4">A4</button>
+      </div>
+      <button class="chip" id="turnBtn" type="button" aria-pressed="false">Landscape</button>
+    </div>
     <div class="row">
       <button class="chip" id="bwBtn" type="button" aria-pressed="true">B&amp;W</button>
       <button class="chip" id="adjReset" type="button">Reset</button>
@@ -52,7 +62,6 @@
       <button class="chip" id="editBtn" type="button">Edit</button>
       <button class="chip" id="camBtn" type="button" aria-pressed="false">Camera</button>
       <label class="slider" for="see"><span>See-through</span><input type="range" id="see" min="0" max="100" step="5"></label>
-      <button class="chip" id="lockBtn" type="button" aria-pressed="false" title="Stop accidental moves while you trace">Lock</button>
     </div>
     <div class="row">
       <span class="label">Tones</span>

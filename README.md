@@ -2,7 +2,7 @@
 
 Crop a reference photo, look at it in tones, and trace it onto paper through your phone's camera.
 
-1. **Crop and adjust:** choose a photo and a shape (1:1, 4:5, 3:4, 2:3, A4, portrait or landscape). Drag and pinch the photo under the frame, and set brightness, contrast and black & white.
+1. **Crop and adjust:** choose a photo (or one of the samples) and a shape (1:1, 4:5, 3:4, 2:3, A4, portrait or landscape). Drag and pinch the photo under the frame, and set brightness, contrast and black & white.
 2. **Trace:** turn on the camera and set how see-through the photo is. Show it as the photo or as 3, 5 or 8 tones. Drag, pinch and twist to line it up with your paper.
    - A spirit level shows when the phone is parallel to the paper. For a sloped board, lay the phone on the paper and tap Calibrate.
 

@@ -16,21 +16,28 @@
 html, body { height: 100%; margin: 0; }
 body {
   background: var(--bg); color: var(--ink); font: 15px/1.4 var(--sans);
-  display: flex; flex-direction: column; overflow: hidden;
-  -webkit-font-smoothing: antialiased;
+  overflow: hidden; -webkit-font-smoothing: antialiased;
 }
 button, input { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--chalk); outline-offset: 2px; }
 
-/* the camera fills the stage; the photo floats above it */
+.screen { height: 100%; display: flex; flex-direction: column; }
 .stage { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; background: #000; }
-#cam { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-#photo {
-  position: absolute; left: 50%; top: 50%; max-width: none;
-  transform-origin: 50% 50%; user-select: none; -webkit-user-select: none; -webkit-user-drag: none;
-  pointer-events: none;
-}
 
+/* step 1: the photo moves under a fixed square frame; outside the frame is dimmed */
+#src {
+  position: absolute; left: 0; top: 0; max-width: none; transform-origin: 0 0;
+  user-select: none; -webkit-user-select: none; -webkit-user-drag: none; pointer-events: none;
+}
+.frame {
+  position: absolute; pointer-events: none;
+  outline: 1px solid rgba(255, 255, 255, .8);
+  background:
+    linear-gradient(to right, transparent calc(33.333% - .5px), rgba(255,255,255,.28) calc(33.333% - .5px), rgba(255,255,255,.28) calc(33.333% + .5px), transparent calc(33.333% + .5px), transparent calc(66.666% - .5px), rgba(255,255,255,.28) calc(66.666% - .5px), rgba(255,255,255,.28) calc(66.666% + .5px), transparent calc(66.666% + .5px)),
+    linear-gradient(to bottom, transparent calc(33.333% - .5px), rgba(255,255,255,.28) calc(33.333% - .5px), rgba(255,255,255,.28) calc(33.333% + .5px), transparent calc(33.333% + .5px), transparent calc(66.666% - .5px), rgba(255,255,255,.28) calc(66.666% - .5px), rgba(255,255,255,.28) calc(66.666% + .5px), transparent calc(66.666% + .5px));
+}
+/* dims everything but the square: its borders are sized to the space around the frame */
+.shade { position: absolute; inset: 0; pointer-events: none; border: 0 solid rgba(0, 0, 0, .62); }
 .empty {
   position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px;
   padding: 24px; text-align: center; color: var(--ink-2);
@@ -38,24 +45,40 @@ button, input { font: inherit; color: inherit; }
 .empty p { margin: 0; }
 .stage.over .empty { outline: 2px dashed var(--chalk); outline-offset: -16px; }
 
+/* step 2: the camera fills the stage; the photo floats above it */
+#cam { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+#photo { position: absolute; left: 50%; top: 50%; transform-origin: 50% 50%; pointer-events: none; }
+
 /* controls */
 .btn, .chip {
   appearance: none; cursor: pointer; touch-action: manipulation; border-radius: 999px;
   border: 1px solid var(--line); background: var(--panel); font-weight: 500;
 }
+.btn { padding: 9px 20px; font-size: 15px; }
 .btn.primary { background: var(--chalk); border-color: var(--chalk); color: #fff; }
 .btn.big { padding: 14px 26px; font-size: 17px; }
 .chip { padding: 9px 15px; font-size: 14px; white-space: nowrap; }
 .chip[aria-pressed="true"] { background: var(--chalk); border-color: var(--chalk); color: #fff; }
 
-.bar {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+.panel {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px;
+  padding: 12px max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   background: var(--bg); border-top: 1px solid var(--line);
 }
-.see { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-2); }
-.see input { flex: 1; min-width: 60px; accent-color: var(--chalk); }
-@media (max-width: 420px) { .see span { display: none; } }
+.row { display: flex; align-items: center; gap: 8px; }
+.grow { flex: 1; }
+.label { font-size: 13px; color: var(--ink-2); }
+.slider { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-2); }
+.slider span { min-width: 5.5em; }
+.slider input { flex: 1; min-width: 60px; accent-color: var(--chalk); }
+.slider output { min-width: 2.6em; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
+.seg { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: #000; border: 1px solid var(--line); }
+.seg button { appearance: none; cursor: pointer; border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; font-size: 13px; color: var(--ink-2); }
+.seg button[aria-checked="true"] { background: var(--chalk); color: #fff; }
+@media (max-width: 420px) {
+  #trace .slider span { display: none; }
+  .row .chip { padding: 8px 12px; }
+}
 
 /* spirit level */
 .level {
@@ -73,7 +96,7 @@ button, input { font: inherit; color: inherit; }
 .level .chip { padding: 6px 11px; font-size: 13px; }
 
 .toast {
-  position: fixed; left: 50%; bottom: calc(76px + env(safe-area-inset-bottom)); transform: translate(-50%, 10px); opacity: 0;
+  position: fixed; left: 50%; bottom: calc(120px + env(safe-area-inset-bottom)); transform: translate(-50%, 10px); opacity: 0;
   padding: 10px 16px; border-radius: 999px; background: var(--ink); color: #1b1814; font-size: 14px;
   pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100vw - 32px); text-align: center;
 }

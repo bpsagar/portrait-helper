@@ -369,6 +369,7 @@
     }
     x.putImageData(img, 0, 0);
     baked = c;
+    splitTones();
   }
 
   // ───────── step 2: trace ─────────
@@ -398,14 +399,63 @@
   //   6–8  dark, mid, light: the lowest third darkens to the darkest value
   // A step [zone, third] sets every level of that zone up to that third to the third's value.
   const STEPS = [[0, 2], [1, 2], [0, 1], [1, 1], [2, 1], [0, 0], [1, 0], [2, 0]];
-  const levelValue = (z) => Math.round((z + 1) * 255 / 9);
   function stepLut(n) {
     const lut = new Array(9).fill(255);
     for (const [zone, third] of STEPS.slice(0, n)) {
-      for (let s = 0; s <= third; s++) lut[zone * 3 + s] = levelValue(zone * 3 + third);
+      for (let s = 0; s <= third; s++) lut[zone * 3 + s] = levels.value[zone * 3 + third];
     }
     return lut;
   }
+
+  // How the grey range becomes 9 levels. Each level is drawn in its lightest grey (its top edge).
+  //   even:  nine equal slices of 0–255.
+  //   peaks: cut where this photo's histogram dips. Multi-level Otsu picks the two cuts that best
+  //          separate the shades into 3 zones, then again inside each zone for its 3 layers, so
+  //          zones settle around the photo's own peaks and the layers stay nested.
+  let split = store.get("pc.split") === "peaks" ? "peaks" : "even";
+  let levels = { of: new Uint8Array(256), value: [] };
+
+  function otsu3(hist, lo, hi) {
+    if (hi - lo < 2) return [lo, Math.min(hi, lo + 1)];
+    let best = -1, cut = [lo + Math.floor((hi - lo) / 3), lo + Math.floor(2 * (hi - lo) / 3)];
+    const n = [0], sum = [0]; // prefix counts and sums from lo
+    for (let v = lo; v <= hi; v++) { n.push(n[n.length - 1] + hist[v]); sum.push(sum[sum.length - 1] + v * hist[v]); }
+    const part = (a, b) => { const w = n[b - lo + 1] - n[a - lo], s = sum[b - lo + 1] - sum[a - lo]; return w ? (s * s) / w : -1; };
+    for (let t1 = lo; t1 < hi - 1; t1++) {
+      const p1 = part(lo, t1);
+      if (p1 < 0) continue;
+      for (let t2 = t1 + 1; t2 < hi; t2++) {
+        const p2 = part(t1 + 1, t2), p3 = part(t2 + 1, hi);
+        if (p2 < 0 || p3 < 0) continue;
+        if (p1 + p2 + p3 > best) { best = p1 + p2 + p3; cut = [t1, t2]; }
+      }
+    }
+    return cut;
+  }
+
+  function splitTones() {
+    const tops = [];
+    if (split === "peaks" && lum) {
+      const hist = new Float64Array(256);
+      for (let i = 0; i < lum.length; i++) hist[lum[i]]++;
+      const [z1, z2] = otsu3(hist, 0, 255);
+      for (const [a, b] of [[0, z1], [z1 + 1, z2], [z2 + 1, 255]]) {
+        const [s1, s2] = otsu3(hist, a, b);
+        tops.push(s1, s2, b);
+      }
+    } else {
+      for (let z = 0; z < 9; z++) tops.push(Math.round((z + 1) * 255 / 9));
+    }
+    levels.value = tops;
+    for (let v = 0, z = 0; v < 256; v++) { while (z < 8 && v > tops[z]) z++; levels.of[v] = z; }
+  }
+
+  function setSplit(mode) {
+    split = mode; store.set("pc.split", mode);
+    document.querySelectorAll("[data-split]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.split === mode)));
+    splitTones(); drawPhoto();
+  }
+  $("splitTabs").addEventListener("click", (e) => { const b = e.target.closest("[data-split]"); if (b) setSplit(b.dataset.split); });
 
   // Draw the crop as the photo itself (step 0) or as the tones after a given step.
   function drawPhoto() {
@@ -419,7 +469,7 @@
     else {
       const img = x.createImageData(ow, oh), d = img.data, lut = stepLut(step);
       for (let i = 0, j = 0; j < lum.length; i += 4, j++) {
-        const v = lut[Math.min(8, Math.floor(lum[j] * 9 / 256))];
+        const v = lut[levels.of[lum[j]]];
         d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255;
       }
       x.putImageData(img, 0, 0);
@@ -598,6 +648,8 @@
     if (b) setTheme(b.dataset.themeChoice);
   });
   setTheme(store.get("pc.theme") || "auto");
+
+  document.querySelectorAll("[data-split]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.split === split)));
 
   // ───────── boot ─────────
   applyAdj();

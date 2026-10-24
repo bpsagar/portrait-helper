@@ -26,6 +26,8 @@ button, input { font: inherit; color: inherit; }
 .float-left { left: max(var(--space-4), env(safe-area-inset-left)); }
 .float-right { right: max(var(--space-4), env(safe-area-inset-right)); }
 .float-bottom { top: auto; bottom: var(--space-4); left: max(var(--space-4), env(safe-area-inset-left)); display: flex; gap: var(--space-3); }
+.float-bottom-right { top: auto; bottom: var(--space-4); right: max(var(--space-4), env(safe-area-inset-right)); }
+.split-tabs { background: var(--surface); padding: 4px 4px 5px; }
 .float .gr-link { background: var(--surface); padding: 6px 6px 12px; }
 
 /* step 1: the photo moves under a fixed frame; outside it, a paper veil */

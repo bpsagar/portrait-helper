@@ -189,19 +189,96 @@
   }
   new ResizeObserver(layoutCrop).observe(prepStage);
 
+  // ───────── recent photos ─────────
+  // Every photo you add is kept in this browser (IndexedDB: localStorage is too small for photos),
+  // with a thumbnail and the crop, shape and adjustments you last used with it. Newest use first.
+  const HISTORY_MAX = 30;
+  let dbp = null;
+  function db() {
+    dbp = dbp || new Promise((resolve, reject) => {
+      const req = indexedDB.open("portrait-coach", 1);
+      req.onupgradeneeded = () => req.result.createObjectStore("photos", { keyPath: "id" });
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return dbp;
+  }
+  async function photos(mode, fn) {
+    const d = await db();
+    return new Promise((resolve, reject) => {
+      const tx = d.transaction("photos", mode), req = fn(tx.objectStore("photos"));
+      tx.oncomplete = () => resolve(req && req.result);
+      tx.onerror = tx.onabort = () => reject(tx.error);
+    });
+  }
+  const historyAll = () => photos("readonly", (s) => s.getAll()).then((all) => all.sort((a, b) => b.used - a.used)).catch(() => []);
+  const historyGet = (id) => photos("readonly", (s) => s.get(id));
+  const historyPut = (rec) => photos("readwrite", (s) => s.put(rec));
+  const historyDelete = (id) => photos("readwrite", (s) => s.delete(id));
+
+  let currentId = store.get("pc.current");
+  const setCurrent = (id) => { currentId = id; store.set("pc.current", id); };
+
+  // Same thumbnail means the same photo: move it to the front instead of adding it twice.
+  async function addToHistory(blob, thumb) {
+    const all = await historyAll();
+    const same = all.find((r) => r.thumb === thumb);
+    const rec = same ? { ...same, used: Date.now() } : { id: Date.now().toString(36), added: Date.now(), used: Date.now(), blob, thumb };
+    await historyPut(rec);
+    for (const old of all.filter((r) => r.id !== rec.id).slice(HISTORY_MAX - 1)) await historyDelete(old.id);
+    return { rec, seen: !!same };
+  }
+  // Remember how the current photo was cropped and adjusted, for the next time it is picked.
+  function rememberSettings() {
+    if (!currentId) return;
+    historyGet(currentId).then((rec) => rec && historyPut({ ...rec, used: Date.now(), crop: { ...crop }, shape: { ...shape }, adj: { ...adj } })).catch(() => {});
+  }
+
+  async function renderRecent() {
+    const all = await historyAll();
+    $("recentWrap").hidden = !all.length;
+    $("recent").replaceChildren(...all.map((rec) => {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "sample"; b.setAttribute("aria-label", "Recent photo");
+      const im = document.createElement("img"); im.src = rec.thumb; im.alt = ""; b.appendChild(im);
+      b.onclick = () => openRecent(rec.id);
+      const x = document.createElement("button");
+      x.type = "button"; x.className = "tile-x"; x.setAttribute("aria-label", "Remove from recent");
+      x.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+      x.onclick = async () => { await historyDelete(rec.id).catch(() => {}); if (rec.id === currentId) setCurrent(null); renderRecent(); };
+      tile.append(b, x);
+      return tile;
+    }));
+  }
+
+  async function openRecent(id) {
+    const rec = await historyGet(id).catch(() => null);
+    if (!rec) return toast("Could not open that photo. Pick another one.");
+    const data = await new Promise((resolve) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.readAsDataURL(rec.blob); });
+    if (rec.shape) Object.assign(shape, rec.shape);
+    if (rec.adj) Object.assign(adj, rec.adj);
+    setCurrent(rec.id);
+    historyPut({ ...rec, used: Date.now() }).then(renderRecent).catch(() => {});
+    store.set("pc.src", data); store.set("pc.view", null);
+    openSource(data, { crop: rec.crop || null });
+  }
+
   // ───────── choosing a photo ─────────
   // Keep a copy (at most 1600px) so a reload brings everything back.
-  function openSource(data, keep) {
+  // opts.crop restores a crop; opts.toTrace goes straight to tracing (a reload mid-drawing).
+  function openSource(data, opts = {}) {
     src.onload = () => {
       src.style.width = src.naturalWidth + "px";
       src.style.height = src.naturalHeight + "px";
       src.hidden = false; $("frame").hidden = false; $("shade").hidden = false; $("empty").hidden = true; $("prepPanel").hidden = false;
       $("prepTop").hidden = false; $("prepTopRight").hidden = false;
-      crop = keep && store.get("pc.crop");
+      crop = opts.crop ? { ...opts.crop } : null;
       if (crop && crop.h == null) { crop.h = crop.L; delete crop.L; } // saved by the square-only version
       if (!crop) defaultCrop();
       applyAdj(); applyShape();
-      if (keep && store.get("pc.screen") === "trace") showTrace(); else showPrep();
+      if (opts.toTrace) showTrace(); else showPrep();
     };
     src.onerror = () => toast("Could not open that image. Try another photo.");
     src.src = data;
@@ -209,10 +286,11 @@
 
   function loadFile(file) {
     if (!file || !file.type.startsWith("image/")) return toast("That file is not an image. Choose a photo instead.");
-    loadUrl(URL.createObjectURL(file), true);
+    loadUrl(URL.createObjectURL(file), true, true);
   }
 
-  function loadUrl(url, revoke) {
+  // Bring a photo in at most 1600px; photos you add (not samples) also go into Recent.
+  function loadUrl(url, revoke, remember) {
     const img = new Image();
     img.onload = () => {
       const s = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
@@ -223,7 +301,20 @@
       const data = c.toDataURL("image/jpeg", 0.9);
       store.set("pc.src", data);
       store.set("pc.crop", null); store.set("pc.view", null);
-      openSource(data, false);
+      setCurrent(null);
+      openSource(data);
+      if (remember) {
+        const t = document.createElement("canvas"), ts = Math.min(1, 240 / Math.max(c.width, c.height));
+        t.width = Math.round(c.width * ts); t.height = Math.round(c.height * ts);
+        t.getContext("2d").drawImage(c, 0, 0, t.width, t.height);
+        const thumb = t.toDataURL("image/jpeg", 0.8);
+        c.toBlob((blob) => addToHistory(blob, thumb).then(({ rec, seen }) => {
+          // A photo used before comes back with its last crop and adjustments.
+          if (seen && rec.crop) return openRecent(rec.id);
+          setCurrent(rec.id);
+          renderRecent();
+        }).catch(() => {}), "image/jpeg", 0.9);
+      }
     };
     img.onerror = () => { if (revoke) URL.revokeObjectURL(url); toast("Could not open that image. Try another photo."); };
     img.src = url;
@@ -238,6 +329,7 @@
     return b;
   }));
   function openPicker() {
+    renderRecent();
     $("empty").hidden = false; $("prepPanel").hidden = true;
     $("cancelPick").hidden = src.hidden;
   }
@@ -356,6 +448,7 @@
 
   function showTrace() {
     bake();
+    rememberSettings();
     $("prep").hidden = true; $("trace").hidden = false;
     store.set("pc.screen", "trace");
     drawPhoto();
@@ -489,6 +582,7 @@
 
   // ───────── boot ─────────
   applyAdj();
+  renderRecent();
   const last = store.get("pc.src");
-  if (last) openSource(last, true);
+  if (last) openSource(last, { crop: store.get("pc.crop"), toTrace: store.get("pc.screen") === "trace" });
 })();

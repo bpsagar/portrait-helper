@@ -7,6 +7,8 @@
 <meta name="description" content="Crop a reference photo, see it in tones, and trace it onto paper through your camera.">
 <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1b1a18" media="(prefers-color-scheme: dark)">
+<!-- apply a chosen theme before anything draws, so there is no flash -->
+<script>try { var t = JSON.parse(localStorage.getItem("pc.theme")); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,6 +35,11 @@
     </div>
 
     <div class="empty" id="empty">
+      <div class="gr-tabs theme-tabs" id="themeTabs" role="tablist" aria-label="Theme">
+        <button class="gr-tab" type="button" role="tab" data-theme-choice="auto" aria-selected="false"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Auto</span></button>
+        <button class="gr-tab" type="button" role="tab" data-theme-choice="light" aria-selected="false"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Light</span></button>
+        <button class="gr-tab" type="button" role="tab" data-theme-choice="dark" aria-selected="false"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Dark</span></button>
+      </div>
       <h1 class="heading">Pick a reference</h1>
       <button class="gr-btn gr-accent" id="pickBtn" type="button"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Choose photo</span></button>
       <p class="small muted">Or drop or paste one here. It stays on this device.</p>

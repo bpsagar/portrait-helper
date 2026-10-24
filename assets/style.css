@@ -47,6 +47,7 @@ button, input { font: inherit; color: inherit; }
   padding: var(--space-5) var(--space-4); text-align: center; background: var(--surface);
 }
 .empty .gr-counter { margin: var(--space-2) 0 0; }
+.theme-tabs { position: absolute; top: max(var(--space-4), env(safe-area-inset-top)); right: max(var(--space-4), env(safe-area-inset-right)); }
 .stage.over .empty { outline: 2.5px solid var(--accent); outline-offset: -12px; }
 .samples { display: grid; grid-template-columns: repeat(4, 64px); gap: var(--space-3); padding: 0 3px 3px 0; }
 .sample {

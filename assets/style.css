@@ -25,6 +25,7 @@ button, input { font: inherit; color: inherit; }
 .float { position: absolute; top: max(var(--space-4), env(safe-area-inset-top)); z-index: 3; }
 .float-left { left: max(var(--space-4), env(safe-area-inset-left)); }
 .float-right { right: max(var(--space-4), env(safe-area-inset-right)); }
+.float-bottom { top: auto; bottom: var(--space-4); left: max(var(--space-4), env(safe-area-inset-left)); display: flex; gap: var(--space-3); }
 .float .gr-link { background: var(--surface); padding: 6px 6px 12px; }
 
 /* step 1: the photo moves under a fixed frame; outside it, a paper veil */
@@ -71,6 +72,10 @@ button, input { font: inherit; color: inherit; }
 }
 .row { display: flex; align-items: flex-end; gap: var(--space-3); min-width: 0; }
 .dd { display: grid; gap: 2px; flex: none; }
+/* the camera row keeps its height whether or not its options show, so nothing jumps */
+.cam-row { min-height: 50px; }
+.cam-opts { flex: 1; min-width: 0; display: flex; align-items: flex-end; gap: var(--space-3); animation: cam-in .18s ease-out; }
+@keyframes cam-in { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
 .grow { flex: 1; }
 .field { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .field-head { display: flex; justify-content: space-between; align-items: baseline; }
@@ -118,4 +123,4 @@ button, input { font: inherit; color: inherit; }
 /* on a phone, keep the level clear of the Edit link */
 @media (max-width: 520px) { .level { left: auto; right: max(var(--space-4), env(safe-area-inset-right)); transform: none; } }
 @media (max-width: 380px) { .dock .row { gap: var(--space-2); } }
-@media (prefers-reduced-motion: reduce) { .sample, .toast { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .sample, .toast { transition: none; } .cam-opts { animation: none; } }

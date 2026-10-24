@@ -289,11 +289,15 @@
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => store.set("pc.view", view), 300);
   }
-  function fit() {
+  // Fit shows the whole picture; fill covers the stage. Both straighten and centre it.
+  function fit(fill) {
     const w = parseFloat(photo.style.width), h = parseFloat(photo.style.height);
-    Object.assign(view, { x: 0, y: 0, r: 0, k: Math.min(stage.clientWidth / w, stage.clientHeight / h) * 0.9 });
+    const sx = stage.clientWidth / w, sy = stage.clientHeight / h;
+    Object.assign(view, { x: 0, y: 0, r: 0, k: fill ? Math.max(sx, sy) : Math.min(sx, sy) * 0.94 });
     apply();
   }
+  $("fitBtn").onclick = () => fit(false);
+  $("fillBtn").onclick = () => fit(true);
 
   // Tones are built like pencil layers over 9 equal levels: 3 zones (dark, mid, light), each split
   // into thirds. Each step darkens one zone's lower thirds, so no step ever lightens anything:
@@ -389,7 +393,8 @@
   const applySee = () => {
     photo.style.opacity = camOn ? see.value / 100 : 1;
     photo.style.mixBlendMode = camOn ? blend.value : "normal";
-    blend.disabled = !camOn;
+    $("camOpts").hidden = !camOn;
+    if (!camOn) blend.close();
     $("seeOut").textContent = see.value + "%"; syncSlider(see);
   };
   see.addEventListener("input", () => { store.set("pc.see", +see.value); applySee(); });

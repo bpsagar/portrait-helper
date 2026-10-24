@@ -580,6 +580,25 @@
 
   window.addEventListener("pagehide", () => { if (!$("trace").hidden) store.set("pc.view", view); });
 
+  // ───────── theme ─────────
+  // Auto follows the device; Light (Paper) and Dark (Graphite) pin it. The head script applies a
+  // saved choice before the page draws.
+  const THEME_BAR = { light: "#f4f1ea", dark: "#1b1a18" };
+  function setTheme(choice) {
+    const root = document.documentElement;
+    if (choice === "light" || choice === "dark") root.dataset.theme = choice; else delete root.dataset.theme;
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+      m.content = THEME_BAR[choice] || (m.media.includes("dark") ? THEME_BAR.dark : THEME_BAR.light);
+    });
+    document.querySelectorAll("[data-theme-choice]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.themeChoice === choice)));
+    store.set("pc.theme", choice);
+  }
+  $("themeTabs").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-theme-choice]");
+    if (b) setTheme(b.dataset.themeChoice);
+  });
+  setTheme(store.get("pc.theme") || "auto");
+
   // ───────── boot ─────────
   applyAdj();
   renderRecent();

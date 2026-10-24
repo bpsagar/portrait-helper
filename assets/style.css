@@ -105,8 +105,25 @@ button, input { font: inherit; color: inherit; }
 .gr-select:disabled { opacity: .4; cursor: not-allowed; }
 .dock .gr-menu { top: auto; bottom: 40px; }
 
-/* step dots: three rounds of layers, grouped 2 · 3 · 3 */
-.gr-dot.round-start { margin-left: 6px; }
+/* tone swatches: on shows the tone, off is crossed out like blank paper */
+.tone-groups { display: flex; gap: var(--space-3); }
+.tone-group { display: grid; gap: 4px; justify-items: start; }
+.zone-btn { appearance: none; border: 0; background: none; padding: 0; cursor: pointer; }
+.zone-btn:hover { color: var(--ink); }
+.zone-btn:focus-visible { outline: 2.5px solid var(--accent); outline-offset: 3px; }
+.swatches { display: flex; gap: 3px; }
+.swatch {
+  position: relative; width: 24px; height: 24px; padding: 0; cursor: pointer; border-radius: var(--radius-none);
+  border: 1.5px solid var(--ink); background: var(--tone, var(--surface));
+}
+.swatch::after { content: ""; position: absolute; inset: -4px -2px; }
+.swatch[aria-pressed="false"] {
+  background: linear-gradient(to top right, transparent calc(50% - .75px), var(--line-strong) calc(50% - .75px), var(--line-strong) calc(50% + .75px), transparent calc(50% + .75px)), var(--surface);
+  border-color: var(--line-strong);
+}
+.swatch:focus-visible { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+.tones-off .swatch[aria-pressed="true"] { opacity: .45; }
+@media (max-width: 380px) { .swatch { width: 21px; } .tone-groups { gap: var(--space-2); } }
 .gr-ibtn:disabled .gr-block { transform: none; }
 
 /* spirit level: a card like Graphite's frames; state is words, the accent marks "level" */
@@ -134,7 +151,6 @@ button, input { font: inherit; color: inherit; }
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
-#toneStep { white-space: nowrap; }
 /* on a phone, keep the level clear of the Edit link */
 @media (max-width: 520px) { .level { left: auto; right: max(var(--space-4), env(safe-area-inset-right)); transform: none; } }
 @media (max-width: 380px) { .dock .row { gap: var(--space-2); } }

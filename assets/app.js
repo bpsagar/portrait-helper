@@ -375,7 +375,10 @@
   // ───────── step 2: trace ─────────
   // The crop is placed by its centre offset from the stage centre, a rotation and a scale.
   const view = { x: 0, y: 0, r: 0, k: 1 };
-  let saveTimer, step = store.get("pc.step") ?? 0;
+  let saveTimer;
+  // Which of the 9 tones show (darkest first), and whether the photo shows instead of tones.
+  const visible = Array.isArray(store.get("pc.visible")) && store.get("pc.visible").length === 9 ? store.get("pc.visible") : new Array(9).fill(true);
+  let showPhoto = store.get("pc.showPhoto") ?? true;
 
   function apply() {
     photo.style.transform = `translate(-50%, -50%) translate(${view.x}px, ${view.y}px) rotate(${view.r}rad) scale(${view.k})`;
@@ -392,20 +395,10 @@
   $("fitBtn").onclick = () => fit(false);
   $("fillBtn").onclick = () => fit(true);
 
-  // Tones are built like pencil layers over 9 equal levels: 3 zones (dark, mid, light), each split
-  // into thirds. Each step darkens one zone's lower thirds, so no step ever lightens anything:
-  //   1–2  the dark and mid zones at their lightest value (light stays white paper)
-  //   3–5  dark, mid, light: the lower two thirds darken to the middle value
-  //   6–8  dark, mid, light: the lowest third darkens to the darkest value
-  // A step [zone, third] sets every level of that zone up to that third to the third's value.
-  const STEPS = [[0, 2], [1, 2], [0, 1], [1, 1], [2, 1], [0, 0], [1, 0], [2, 0]];
-  function stepLut(n) {
-    const lut = new Array(9).fill(255);
-    for (const [zone, third] of STEPS.slice(0, n)) {
-      for (let s = 0; s <= third; s++) lut[zone * 3 + s] = levels.value[zone * 3 + third];
-    }
-    return lut;
-  }
+  // Tones: 9 levels in 3 zones (dark, mid, light), each zone in thirds. Any set of them can show;
+  // a hidden tone is left as blank paper.
+  const ZONES = ["Dark", "Mid", "Light"];
+  const toneLut = () => levels.value.map((v, z) => (visible[z] ? v : 255));
 
   // How the grey range becomes 9 levels. Each level is drawn in its lightest grey (its top edge).
   //   even:  nine equal slices of 0–255.
@@ -457,7 +450,7 @@
   }
   $("splitTabs").addEventListener("click", (e) => { const b = e.target.closest("[data-split]"); if (b) setSplit(b.dataset.split); });
 
-  // Draw the crop as the photo itself (step 0) or as the tones after a given step.
+  // Draw the crop as the photo itself, or as the chosen tones.
   function drawPhoto() {
     if (!baked) return;
     const ow = baked.width, oh = baked.height, long = Math.max(ow, oh);
@@ -465,36 +458,56 @@
     photo.style.width = DISPLAY * ow / long + "px";
     photo.style.height = DISPLAY * oh / long + "px";
     const x = photo.getContext("2d");
-    if (!step) { x.drawImage(baked, 0, 0); }
+    if (showPhoto) { x.drawImage(baked, 0, 0); }
     else {
-      const img = x.createImageData(ow, oh), d = img.data, lut = stepLut(step);
+      const img = x.createImageData(ow, oh), d = img.data, lut = toneLut();
       for (let i = 0, j = 0; j < lum.length; i += 4, j++) {
         const v = lut[levels.of[lum[j]]];
         d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255;
       }
       x.putImageData(img, 0, 0);
     }
-    $("toneStep").textContent = step ? `${step} of ${STEPS.length}` : "Photo";
-    $("toneBack").disabled = step === 0;
-    $("toneNext").disabled = step === STEPS.length;
-    // Graphite step dots: done, on, todo; a small gap where each round of layers starts.
-    $("toneDots").replaceChildren(...STEPS.map((_, i) => {
-      const dot = document.createElement("button");
-      dot.type = "button"; dot.className = "gr-dot" + (i === 2 || i === 5 ? " round-start" : "");
-      dot.dataset.s = i + 1 === step ? "on" : i + 1 < step ? "done" : "todo";
-      dot.setAttribute("aria-label", `Go to step ${i + 1}`);
-      dot.onclick = () => goStep(i + 1);
-      return dot;
+    renderTones();
+  }
+
+  // The swatch row: each swatch is a tone in its own grey; zone names toggle their three tones.
+  function renderTones() {
+    $("photoBtn").setAttribute("aria-pressed", String(showPhoto));
+    $("tones").classList.toggle("tones-off", showPhoto);
+    $("tones").replaceChildren(...ZONES.map((name, zone) => {
+      const group = document.createElement("div");
+      group.className = "tone-group";
+      const label = document.createElement("button");
+      label.type = "button"; label.className = "gr-counter zone-btn"; label.textContent = name;
+      label.setAttribute("aria-label", `Show or hide all ${name.toLowerCase()} tones`);
+      label.onclick = () => {
+        const on = !(visible[zone * 3] && visible[zone * 3 + 1] && visible[zone * 3 + 2]);
+        for (let s = 0; s < 3; s++) visible[zone * 3 + s] = on;
+        changeTones();
+      };
+      const row = document.createElement("div");
+      row.className = "swatches";
+      for (let s = 0; s < 3; s++) {
+        const z = zone * 3 + s, v = levels.value[z];
+        const sw = document.createElement("button");
+        sw.type = "button"; sw.className = "swatch";
+        sw.style.setProperty("--tone", `rgb(${v},${v},${v})`);
+        sw.setAttribute("aria-pressed", String(visible[z]));
+        sw.setAttribute("aria-label", `${name} tone ${s + 1} of 3`);
+        sw.onclick = () => { visible[z] = !visible[z]; changeTones(); };
+        row.appendChild(sw);
+      }
+      group.append(label, row);
+      return group;
     }));
   }
-  const goStep = (n) => { step = Math.max(0, Math.min(STEPS.length, n)); store.set("pc.step", step); drawPhoto(); };
-  $("toneBack").onclick = () => goStep(step - 1);
-  $("toneNext").onclick = () => goStep(step + 1);
-  document.addEventListener("keydown", (e) => {
-    if ($("trace").hidden || e.target.matches("input")) return;
-    if (e.key === "ArrowRight") goStep(step + 1);
-    else if (e.key === "ArrowLeft") goStep(step - 1);
-  });
+  // Touching a tone means you want tones, not the photo.
+  function changeTones() {
+    showPhoto = false;
+    store.set("pc.visible", visible); store.set("pc.showPhoto", showPhoto);
+    drawPhoto();
+  }
+  $("photoBtn").onclick = () => { showPhoto = !showPhoto; store.set("pc.showPhoto", showPhoto); drawPhoto(); };
 
   function showTrace() {
     bake();

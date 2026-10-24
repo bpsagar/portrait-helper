@@ -13,11 +13,57 @@
     { name: "Portrait", src: "assets/samples/ronaldo.jpg" },
   ];
   const RATIOS = { "1:1": 1, "4:5": 4 / 5, "3:4": 3 / 4, "2:3": 2 / 3, A4: 1 / Math.SQRT2 }; // width / height, portrait
+  const BLENDS = { normal: "Normal", multiply: "Multiply", darken: "Darken", overlay: "Overlay", "soft-light": "Soft light", screen: "Screen", difference: "Difference" };
 
   const store = {
     get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
   };
+
+  // ───────── Graphite controls ─────────
+  // Dropdown: a caption, a soft hatched trigger and a listbox menu (Graphite's Dropdown component).
+  const CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 13 5 5L20 6"/></svg>';
+  let openMenu = null;
+  function dropdown(host, options, onChange) {
+    const id = host.id + "Cap";
+    host.classList.add("dd");
+    host.innerHTML = `<span class="gr-counter" id="${id}">${host.dataset.label}</span>
+      <div class="gr-dropdown"><button class="gr-select" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="${id}">
+      <span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label"></span>
+      <svg class="gr-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 9 7 7 7-7"/></svg></button>
+      <div class="gr-menu" role="listbox" aria-labelledby="${id}" hidden></div></div>`;
+    const btn = host.querySelector(".gr-select"), menu = host.querySelector(".gr-menu"), label = host.querySelector(".gr-label");
+    let value = null;
+    const close = () => { btn.setAttribute("aria-expanded", "false"); menu.hidden = true; if (openMenu === close) openMenu = null; };
+    menu.replaceChildren(...Object.entries(options).map(([v, text]) => {
+      const o = document.createElement("button");
+      o.type = "button"; o.className = "gr-option"; o.setAttribute("role", "option"); o.dataset.value = v;
+      o.innerHTML = CHECK; o.prepend(text);
+      o.onclick = () => { close(); btn.focus(); if (v !== value) { set(v); onChange(v); } };
+      return o;
+    }));
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      if (!menu.hidden) return close();
+      if (openMenu) openMenu();
+      btn.setAttribute("aria-expanded", "true"); menu.hidden = false; openMenu = close;
+      (menu.querySelector('[aria-selected="true"]') || menu.firstChild).focus();
+    };
+    menu.addEventListener("keydown", (e) => {
+      const items = [...menu.children], i = items.indexOf(document.activeElement);
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); items[(i + (e.key === "ArrowDown" ? 1 : items.length - 1)) % items.length].focus(); }
+      else if (e.key === "Escape") { close(); btn.focus(); }
+    });
+    function set(v) {
+      value = v; label.textContent = options[v];
+      [...menu.children].forEach((o) => o.setAttribute("aria-selected", String(o.dataset.value === v)));
+    }
+    return { set, close, get value() { return value; }, set disabled(d) { btn.disabled = d; if (d) close(); } };
+  }
+  document.addEventListener("click", (e) => { if (openMenu && !e.target.closest(".gr-dropdown")) openMenu(); });
+
+  // Slider: the squiggle grows into an arrow; --f is the value as a fraction.
+  const syncSlider = (input) => input.parentNode.style.setProperty("--f", (input.value - input.min) / (input.max - input.min));
 
   let toastTimer;
   function toast(msg) {
@@ -112,24 +158,21 @@
   });
 
   // A new shape gets the largest crop that fits, around the same centre.
+  const shapeDd = dropdown($("shapeDd"), Object.fromEntries(Object.keys(RATIOS).map((r) => [r, r])), (r) => { shape.ratio = r; applyShape(true); });
   function applyShape(resize) {
     if (resize && crop) crop.h = Infinity;
-    document.querySelectorAll("#ratios button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.ratio === shape.ratio)));
+    shapeDd.set(shape.ratio);
     $("turnBtn").setAttribute("aria-pressed", String(shape.wide));
     store.set("pc.shape", shape);
     layoutCrop();
   }
-  $("ratios").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-ratio]");
-    if (b) { shape.ratio = b.dataset.ratio; applyShape(true); }
-  });
   $("turnBtn").onclick = () => { shape.wide = !shape.wide; applyShape(true); };
 
   // The preview uses CSS filters; bake() applies the same maths to the pixels.
   function applyAdj() {
     src.style.filter = `brightness(${adj.b / 100}) contrast(${adj.c / 100}) grayscale(${adj.bw ? 1 : 0})`;
-    $("bright").value = adj.b; $("brightOut").textContent = adj.b + "%";
-    $("contrast").value = adj.c; $("contrastOut").textContent = adj.c + "%";
+    $("bright").value = adj.b; $("brightOut").textContent = adj.b + "%"; syncSlider($("bright"));
+    $("contrast").value = adj.c; $("contrastOut").textContent = adj.c + "%"; syncSlider($("contrast"));
     $("bwBtn").setAttribute("aria-pressed", String(adj.bw));
     store.set("pc.adj", adj);
   }
@@ -153,18 +196,19 @@
       src.style.width = src.naturalWidth + "px";
       src.style.height = src.naturalHeight + "px";
       src.hidden = false; $("frame").hidden = false; $("shade").hidden = false; $("empty").hidden = true; $("prepPanel").hidden = false;
+      $("prepTop").hidden = false; $("prepTopRight").hidden = false;
       crop = keep && store.get("pc.crop");
       if (crop && crop.h == null) { crop.h = crop.L; delete crop.L; } // saved by the square-only version
       if (!crop) defaultCrop();
       applyAdj(); applyShape();
       if (keep && store.get("pc.screen") === "trace") showTrace(); else showPrep();
     };
-    src.onerror = () => toast("Couldn't open that image.");
+    src.onerror = () => toast("Could not open that image. Try another photo.");
     src.src = data;
   }
 
   function loadFile(file) {
-    if (!file || !file.type.startsWith("image/")) return toast("That doesn't look like an image.");
+    if (!file || !file.type.startsWith("image/")) return toast("That file is not an image. Choose a photo instead.");
     loadUrl(URL.createObjectURL(file), true);
   }
 
@@ -181,7 +225,7 @@
       store.set("pc.crop", null); store.set("pc.view", null);
       openSource(data, false);
     };
-    img.onerror = () => { if (revoke) URL.revokeObjectURL(url); toast("Couldn't open that image."); };
+    img.onerror = () => { if (revoke) URL.revokeObjectURL(url); toast("Could not open that image. Try another photo."); };
     img.src = url;
   }
 
@@ -284,12 +328,16 @@
       }
       x.putImageData(img, 0, 0);
     }
-    $("toneStep").textContent = step ? `${step} / ${STEPS.length}` : "Photo";
+    $("toneStep").textContent = step ? `${step} of ${STEPS.length}` : "Photo";
     $("toneBack").disabled = step === 0;
     $("toneNext").disabled = step === STEPS.length;
+    // Graphite step dots: done, on, todo; a small gap where each round of layers starts.
     $("toneDots").replaceChildren(...STEPS.map((_, i) => {
-      const dot = document.createElement("span");
-      dot.className = (i + 1 === step ? "on" : i + 1 < step ? "done" : "") + (i === 2 || i === 5 ? " gap" : "");
+      const dot = document.createElement("button");
+      dot.type = "button"; dot.className = "gr-dot" + (i === 2 || i === 5 ? " round-start" : "");
+      dot.dataset.s = i + 1 === step ? "on" : i + 1 < step ? "done" : "todo";
+      dot.setAttribute("aria-label", `Go to step ${i + 1}`);
+      dot.onclick = () => goStep(i + 1);
       return dot;
     }));
   }
@@ -334,16 +382,17 @@
   let camOn = false, stream = null, wakeLock = null;
   // With the camera on, the photo blends with the live view: Multiply, for instance, lets white
   // show the paper through untouched while darks darken it. See-through sets the strength.
-  const see = $("see"), blend = $("blend");
+  const see = $("see");
   see.value = store.get("pc.see") ?? 50;
-  blend.value = store.get("pc.blend") || "normal";
+  const blend = dropdown($("blendDd"), BLENDS, (v) => { store.set("pc.blend", v); applySee(); });
+  blend.set(BLENDS[store.get("pc.blend")] ? store.get("pc.blend") : store.get("pc.blend") === "color-burn" ? "multiply" : "normal");
   const applySee = () => {
     photo.style.opacity = camOn ? see.value / 100 : 1;
     photo.style.mixBlendMode = camOn ? blend.value : "normal";
     blend.disabled = !camOn;
+    $("seeOut").textContent = see.value + "%"; syncSlider(see);
   };
   see.addEventListener("input", () => { store.set("pc.see", +see.value); applySee(); });
-  blend.addEventListener("change", () => { store.set("pc.blend", blend.value); applySee(); });
   applySee();
 
   // ───────── camera ─────────
@@ -357,7 +406,7 @@
         cam.srcObject = stream;
         try { wakeLock = await navigator.wakeLock?.request("screen"); } catch { /* optional */ }
       } catch {
-        toast("Camera isn't available. Allow camera access, and open the site over HTTPS.");
+        toast("Camera is not available. Allow camera access and open the site over HTTPS.");
         return;
       }
     } else {
@@ -413,7 +462,9 @@
     const k = 22 / Math.sin(10 * Math.PI / 180), len = Math.hypot(dx, dy) * k, clamp = len > 22 ? 22 / len : 1;
     $("bubble").style.transform = `translate(${(dx * k * clamp).toFixed(1)}px, ${(-dy * k * clamp).toFixed(1)}px)`;
     $("levelDeg").textContent = deg.toFixed(1) + "°";
-    $("level").dataset.state = deg <= 1.5 ? "ok" : deg <= 4 ? "near" : "off";
+    const state = deg <= 1.5 ? "ok" : deg <= 4 ? "near" : "off";
+    $("level").dataset.state = state;
+    $("levelWord").textContent = state === "ok" ? "Level" : "Tilt";
   }
 
   // iOS asks for permission, and only from a tap; call this first thing in the tap handler.

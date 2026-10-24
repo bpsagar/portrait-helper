@@ -1,0 +1,87 @@
+/* Graphite — generated from tokens.json (https://claude.ai/artifact/WA9vMKY1RLs6ufay2c5jX3). Paper is the default theme. */
+:root {
+  --surface: #f4f1ea;
+  --surface-raised: #f9f7f1;
+  --surface-sunken: #e6e3db;
+  --ink: #1f1e1c;
+  --ink-muted: #4a4946;
+  --ink-subtle: #6a6863;
+  --line: #d3d1cb;
+  --line-strong: #8f8d87;
+  --accent: #b0432a;
+  --accent-deep: #5e1e10;
+  --on-accent: #f4f1ea;
+  --accent-fill: #b0432a;
+  --accent-line: #5e1e10;
+  --block-fill: #55524e;
+  --block-line: #1a1917;
+  --block-ink: #f4f1ea;
+  --soft-fill: #d6d2ca;
+  --soft-line: #8a867e;
+  --soft-ink: #1f1e1c;
+  --shadow-block: 3px 3px 0 #26252a;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --radius-none: 0px;
+  --radius-pill: 4px;
+  --radius-round: 50%;
+  --control-height: 32px;
+  --tab-height: 28px;
+  --hit-area: 44px;
+  --dock-height: 128px;
+  --font-mono: "Spline Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface: #1b1a18;
+    --surface-raised: #252421;
+    --surface-sunken: #131211;
+    --ink: #f0ede6;
+    --ink-muted: #bdb9b0;
+    --ink-subtle: #8f8d87;
+    --line: #3a3835;
+    --line-strong: #6a6863;
+    --accent: #e88a6e;
+    --accent-deep: #b8573d;
+    --on-accent: #14130f;
+    --accent-fill: #e88a6e;
+    --accent-line: #b8573d;
+    --block-fill: #cfcbc2;
+    --block-line: #6f6b64;
+    --block-ink: #1b1a18;
+    --soft-fill: #34322f;
+    --soft-line: #14130f;
+    --soft-ink: #f0ede6;
+    --shadow-block: 3px 3px 0 #000000;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --surface: #1b1a18;
+  --surface-raised: #252421;
+  --surface-sunken: #131211;
+  --ink: #f0ede6;
+  --ink-muted: #bdb9b0;
+  --ink-subtle: #8f8d87;
+  --line: #3a3835;
+  --line-strong: #6a6863;
+  --accent: #e88a6e;
+  --accent-deep: #b8573d;
+  --on-accent: #14130f;
+  --accent-fill: #e88a6e;
+  --accent-line: #b8573d;
+  --block-fill: #cfcbc2;
+  --block-line: #6f6b64;
+  --block-ink: #1b1a18;
+  --soft-fill: #34322f;
+  --soft-line: #14130f;
+  --soft-ink: #f0ede6;
+  --shadow-block: 3px 3px 0 #000000;
+  color-scheme: dark;
+}

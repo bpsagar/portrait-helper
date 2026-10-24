@@ -5,11 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Portrait Coach</title>
 <meta name="description" content="Crop a reference photo, see it in tones, and trace it onto paper through your camera.">
-<meta name="theme-color" content="#14120f">
+<meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b1a18" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spline+Sans+Mono:ital,wght@0,300..700;1,300..700&display=swap">
+<link rel="stylesheet" href="assets/graphite/tokens.css">
+<link rel="stylesheet" href="assets/graphite/components.css">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
+<!-- Graphite's rough edge, used by every hatched block -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="gr-rough" x="-8%" y="-30%" width="116%" height="160%"><feTurbulence type="fractalNoise" baseFrequency="0.05 0.12" numOctaves="2" seed="5" result="e"/><feDisplacementMap in="SourceGraphic" in2="e" scale="2.6" xChannelSelector="R" yChannelSelector="G"/></filter></defs></svg>
 
 <!-- Step 1: crop to a shape and adjust -->
 <section class="screen" id="prep">
@@ -17,33 +25,40 @@
     <img id="src" alt="Photo being cropped" hidden>
     <div class="shade" id="shade" hidden></div>
     <div class="frame" id="frame" hidden></div>
+    <div class="float float-left" id="prepTop" hidden>
+      <button class="gr-link" id="changeBtn" type="button">New photo</button>
+    </div>
+    <div class="float float-right" id="prepTopRight" hidden>
+      <button class="gr-btn gr-soft" id="adjReset" type="button"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Reset</span></button>
+    </div>
+
     <div class="empty" id="empty">
-      <button class="btn primary big" id="pickBtn" type="button">Choose a photo</button>
-      <p>or drop / paste one here. It stays on your device.</p>
-      <p class="or">or start with a sample</p>
+      <h1 class="heading">Pick a reference</h1>
+      <button class="gr-btn gr-accent" id="pickBtn" type="button"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Choose photo</span></button>
+      <p class="small muted">Or drop or paste one here. It stays on this device.</p>
+      <p class="gr-counter">Samples</p>
       <div class="samples" id="samples"></div>
-      <button class="chip" id="cancelPick" type="button" hidden>Cancel</button>
+      <button class="gr-btn gr-soft" id="cancelPick" type="button" hidden><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Cancel</span></button>
     </div>
   </main>
-  <div class="panel" id="prepPanel" hidden>
-    <label class="slider" for="bright"><span>Brightness</span><input type="range" id="bright" min="50" max="150" step="1"><output id="brightOut"></output></label>
-    <label class="slider" for="contrast"><span>Contrast</span><input type="range" id="contrast" min="50" max="200" step="1"><output id="contrastOut"></output></label>
+
+  <div class="dock" id="prepPanel" hidden>
     <div class="row">
-      <div class="seg" id="ratios" role="radiogroup" aria-label="Crop shape">
-        <button type="button" role="radio" data-ratio="1:1">1:1</button>
-        <button type="button" role="radio" data-ratio="4:5">4:5</button>
-        <button type="button" role="radio" data-ratio="3:4">3:4</button>
-        <button type="button" role="radio" data-ratio="2:3">2:3</button>
-        <button type="button" role="radio" data-ratio="A4">A4</button>
+      <div class="field">
+        <div class="field-head"><label class="gr-counter" for="bright">Brightness</label><output id="brightOut"></output></div>
+        <div class="gr-slider"><span class="gr-slider__track"></span><span class="gr-slider__fill"></span><svg class="gr-slider__arrow" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 1.5 11 7 3 12.5"/></svg><input type="range" id="bright" min="50" max="150" step="1"></div>
       </div>
-      <button class="chip" id="turnBtn" type="button" aria-pressed="false">Landscape</button>
+      <div class="field">
+        <div class="field-head"><label class="gr-counter" for="contrast">Contrast</label><output id="contrastOut"></output></div>
+        <div class="gr-slider"><span class="gr-slider__track"></span><span class="gr-slider__fill"></span><svg class="gr-slider__arrow" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 1.5 11 7 3 12.5"/></svg><input type="range" id="contrast" min="50" max="200" step="1"></div>
+      </div>
     </div>
     <div class="row">
-      <button class="chip" id="bwBtn" type="button" aria-pressed="true">B&amp;W</button>
-      <button class="chip" id="adjReset" type="button">Reset</button>
+      <div id="shapeDd" data-label="Shape"></div>
+      <button class="gr-ibtn gr-toggle" id="turnBtn" type="button" aria-pressed="false" aria-label="Landscape" title="Landscape"><span class="gr-block"><span class="gr-hatch"></span></span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.6-6.4"/><path d="M3 3v5h5"/></svg></button>
+      <button class="gr-btn gr-toggle" id="bwBtn" type="button" aria-pressed="true"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">B&amp;W</span></button>
       <span class="grow"></span>
-      <button class="chip" id="changeBtn" type="button">New photo</button>
-      <button class="btn primary" id="doneBtn" type="button">Done</button>
+      <button class="gr-btn gr-accent" id="doneBtn" type="button"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Done</span></button>
     </div>
   </div>
 </section>
@@ -53,34 +68,32 @@
   <main class="stage" id="stage">
     <video id="cam" playsinline muted autoplay hidden></video>
     <canvas id="photo" aria-label="Reference photo"></canvas>
+    <div class="float float-left">
+      <button class="gr-link" id="editBtn" type="button">Edit</button>
+    </div>
     <div class="level" id="level" hidden>
       <div class="dial" aria-hidden="true"><span class="ring"></span><span class="bubble" id="bubble"></span></div>
-      <b id="levelDeg" aria-live="polite">0.0°</b>
-      <button class="chip" id="calBtn" type="button" title="Lay the phone flat on your paper, then tap">Calibrate</button>
-      <button class="chip" id="calReset" type="button" hidden title="Level against a flat table again">Reset</button>
+      <div class="level-read"><span class="gr-counter" id="levelWord">Tilt</span><b class="level-deg" id="levelDeg" aria-live="polite">0.0°</b></div>
+      <button class="gr-btn gr-soft" id="calBtn" type="button" title="Lay the phone flat on your paper, then tap"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Calibrate</span></button>
+      <button class="gr-btn gr-soft" id="calReset" type="button" hidden title="Level against a flat table again"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Reset</span></button>
     </div>
   </main>
-  <nav class="panel" aria-label="Tracing">
+
+  <nav class="dock" aria-label="Tracing">
     <div class="row">
-      <button class="chip" id="editBtn" type="button">Edit</button>
-      <button class="chip" id="camBtn" type="button" aria-pressed="false">Camera</button>
-      <select class="chip" id="blend" aria-label="Blend with camera" title="How the photo mixes with the camera view">
-        <option value="normal">Normal</option>
-        <option value="multiply">Multiply</option>
-        <option value="darken">Darken</option>
-        <option value="color-burn">Colour burn</option>
-        <option value="overlay">Overlay</option>
-        <option value="soft-light">Soft light</option>
-        <option value="screen">Screen</option>
-        <option value="difference">Difference</option>
-      </select>
-      <label class="slider" for="see"><span>See-through</span><input type="range" id="see" min="0" max="100" step="5"></label>
+      <button class="gr-btn gr-toggle" id="camBtn" type="button" aria-pressed="false"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Camera</span></button>
+      <div id="blendDd" data-label="Blend"></div>
+      <div class="field">
+        <div class="field-head"><label class="gr-counter" for="see">Opacity</label><output id="seeOut"></output></div>
+        <div class="gr-slider"><span class="gr-slider__track"></span><span class="gr-slider__fill"></span><svg class="gr-slider__arrow" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 1.5 11 7 3 12.5"/></svg><input type="range" id="see" min="0" max="100" step="5"></div>
+      </div>
     </div>
     <div class="row">
-      <button class="chip" id="toneBack" type="button" aria-label="Previous tone step">←</button>
-      <span class="step" id="toneStep" aria-live="polite"></span>
-      <button class="chip" id="toneNext" type="button" aria-label="Next tone step">→</button>
-      <div class="dots" id="toneDots" aria-hidden="true"></div>
+      <button class="gr-ibtn gr-soft" id="toneBack" type="button" aria-label="Previous step"><span class="gr-block"><span class="gr-hatch"></span></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+      <div class="gr-dots" id="toneDots"></div>
+      <span class="grow"></span>
+      <span class="gr-counter" id="toneStep" aria-live="polite"></span>
+      <button class="gr-ibtn" id="toneNext" type="button" aria-label="Next step"><span class="gr-block"><span class="gr-hatch"></span></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
     </div>
   </nav>
 </section>

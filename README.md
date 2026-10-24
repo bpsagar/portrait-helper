@@ -13,3 +13,5 @@ python3 -m http.server   # then open http://localhost:8000
 ```
 
 Deployed to GitHub Pages by `.github/workflows/pages.yml` on every push to `main`.
+
+The interface uses the Graphite design system: `assets/graphite/tokens.css` is generated from Graphite's `tokens.json`, and `assets/graphite/components.css` is its component stylesheet, unchanged.

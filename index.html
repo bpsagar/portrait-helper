@@ -112,12 +112,11 @@
       </div>
       </div>
     </div>
-    <div class="row">
-      <button class="gr-ibtn gr-soft" id="toneBack" type="button" aria-label="Previous step"><span class="gr-block"><span class="gr-hatch"></span></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
-      <div class="gr-dots" id="toneDots"></div>
+    <div class="row tones-row">
+      <button class="gr-btn gr-toggle" id="photoBtn" type="button" aria-pressed="false"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Photo</span></button>
       <span class="grow"></span>
-      <span class="gr-counter" id="toneStep" aria-live="polite"></span>
-      <button class="gr-ibtn" id="toneNext" type="button" aria-label="Next step"><span class="gr-block"><span class="gr-hatch"></span></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+      <!-- which tones show: tap a swatch, or a zone name for all three of its tones -->
+      <div class="tone-groups" id="tones" role="group" aria-label="Visible tones"></div>
     </div>
   </nav>
 </section>

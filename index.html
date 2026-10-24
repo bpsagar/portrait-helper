@@ -71,6 +71,10 @@
     <div class="float float-left">
       <button class="gr-link" id="editBtn" type="button">Edit</button>
     </div>
+    <div class="float float-bottom">
+      <button class="gr-btn gr-soft" id="fitBtn" type="button" title="Show the whole picture, straightened"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Fit</span></button>
+      <button class="gr-btn gr-soft" id="fillBtn" type="button" title="Fill the screen, straightened"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Fill</span></button>
+    </div>
     <div class="level" id="level" hidden>
       <div class="dial" aria-hidden="true"><span class="ring"></span><span class="bubble" id="bubble"></span></div>
       <div class="level-read"><span class="gr-counter" id="levelWord">Tilt</span><b class="level-deg" id="levelDeg" aria-live="polite">0.0°</b></div>
@@ -80,12 +84,15 @@
   </main>
 
   <nav class="dock" aria-label="Tracing">
-    <div class="row">
+    <div class="row cam-row">
       <button class="gr-btn gr-toggle" id="camBtn" type="button" aria-pressed="false"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Camera</span></button>
+      <!-- blend and opacity only matter over the camera, so they appear when it is on -->
+      <div class="cam-opts" id="camOpts" hidden>
       <div id="blendDd" data-label="Blend"></div>
       <div class="field">
         <div class="field-head"><label class="gr-counter" for="see">Opacity</label><output id="seeOut"></output></div>
         <div class="gr-slider"><span class="gr-slider__track"></span><span class="gr-slider__fill"></span><svg class="gr-slider__arrow" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 1.5 11 7 3 12.5"/></svg><input type="range" id="see" min="0" max="100" step="5"></div>
+      </div>
       </div>
     </div>
     <div class="row">

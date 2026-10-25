@@ -1,5 +1,10 @@
 # Portrait Coach
 
+Two apps on one site:
+
+- **Portrait Coach** (`/`): crop a reference and trace it onto paper through your camera.
+- **Portrait Study** (`/study/`): learn the fundamentals of a portrait on your own reference, one lesson at a time: squint, find the light, light and shadow, edges, halftone, darkest and lightest, inside the shadow, and a five-value plan. Each lesson is measured from the photo, and some ask you to tap the picture before showing the answer.
+
 Crop a reference photo, look at it in tones, and trace it onto paper through your phone's camera.
 
 1. **Crop and adjust:** choose a photo (or a recent one, or a sample) and a shape (1:1, 4:5, 3:4, 2:3, A4, portrait or landscape). Drag and pinch the photo under the frame, and set brightness, contrast and black & white.

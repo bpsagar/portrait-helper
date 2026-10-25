@@ -1,0 +1,94 @@
+/* Portrait Study, laid out with Graphite (tokens.css + components.css). Only tokens; no new hues. */
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--surface); color: var(--ink);
+  font: 400 15px/24px var(--font-mono);
+  overflow: hidden; -webkit-font-smoothing: antialiased;
+}
+button, input { font: inherit; color: inherit; }
+.accent { color: var(--accent); }
+.screen { height: 100%; display: flex; flex-direction: column; }
+
+/* pick */
+.pick {
+  flex: 1; overflow-y: auto; display: grid; align-content: center; justify-items: center; gap: var(--space-4);
+  padding: var(--space-6) max(var(--space-4), env(safe-area-inset-right)) var(--space-6) max(var(--space-4), env(safe-area-inset-left));
+  text-align: center;
+}
+.display { margin: 0; font-size: clamp(36px, 10vw, 56px); line-height: 1; font-weight: 500; letter-spacing: -.05em; text-wrap: balance; }
+.lede { margin: 0; max-width: 34ch; color: var(--ink-muted); text-wrap: pretty; }
+.group { display: grid; justify-items: center; gap: var(--space-3); margin-top: var(--space-2); }
+.group .gr-counter { margin: 0; }
+.tiles { display: grid; grid-template-columns: repeat(4, 64px); gap: var(--space-3); padding: 0 3px 3px 0; }
+#recent { max-height: calc(2 * 84px + var(--space-3) + 6px); overflow-y: auto; }
+.tile {
+  appearance: none; padding: 0; cursor: pointer; width: 64px; height: 84px; border-radius: var(--radius-none);
+  border: 1.5px solid var(--ink); box-shadow: var(--shadow-block); background: var(--surface-raised); overflow: hidden; transition: transform .18s;
+}
+.tile:hover { transform: translate(-1.5px, -1.5px); }
+.tile:active { transform: translate(2px, 2px); box-shadow: none; }
+.tile:focus-visible { outline: 2.5px solid var(--accent); outline-offset: 4px; }
+.tile img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(1); }
+
+/* study: the reference keeps the screen */
+.stage { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--surface-sunken); display: grid; place-items: center; padding: 56px var(--space-4) 52px; }
+#view { max-width: 100%; max-height: 100%; display: block; border: 1.5px solid var(--ink); box-shadow: var(--shadow-block); cursor: default; touch-action: manipulation; }
+#view.asking { cursor: crosshair; outline: 2.5px solid var(--accent); outline-offset: 4px; }
+.float { position: absolute; top: max(var(--space-4), env(safe-area-inset-top)); z-index: 3; }
+.float-left { left: max(var(--space-4), env(safe-area-inset-left)); }
+.float-right { right: max(var(--space-4), env(safe-area-inset-right)); }
+.float .gr-link { background: var(--surface); padding: 6px 6px 12px; }
+.look-tabs { background: var(--surface); padding: 4px 4px 5px; }
+
+/* a value key under the picture: swatch, name and share of the picture */
+.legend {
+  position: absolute; left: 50%; bottom: var(--space-2); transform: translateX(-50%); z-index: 2;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 4px var(--space-3); padding: 6px var(--space-3);
+  width: max-content; max-width: calc(100% - 2 * var(--space-4));
+  background: var(--surface-raised); border: 1.5px solid var(--ink); box-shadow: var(--shadow-block);
+  font-size: 11px; line-height: 1; letter-spacing: .08em; text-transform: uppercase;
+}
+.legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.legend i { width: 12px; height: 12px; border: 1.5px solid var(--ink); display: inline-block; }
+.legend b { font-weight: 600; color: var(--ink-muted); }
+
+/* dock: lesson title, a few sentences, the lesson's control, and the lesson dots */
+.dock {
+  display: grid; gap: var(--space-2);
+  padding: var(--space-3) max(var(--space-4), env(safe-area-inset-right)) max(var(--space-3), env(safe-area-inset-bottom)) max(var(--space-4), env(safe-area-inset-left));
+  background: var(--surface); border-top: 1.5px solid var(--ink);
+}
+.lesson-head { display: flex; align-items: baseline; gap: var(--space-3); flex-wrap: wrap; }
+.title { margin: 0; font-size: 18px; line-height: 24px; font-weight: 600; letter-spacing: -.02em; }
+.body { margin: 0; font-size: 13px; line-height: 19px; color: var(--ink-muted); max-width: 62ch; }
+.draw { color: var(--ink); }
+.draw::before { content: "Draw: "; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; font-size: 11px; color: var(--accent); }
+.control { display: flex; align-items: center; gap: var(--space-3); min-height: 32px; }
+.control:empty { display: none; }
+.control .field { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.field-head { display: flex; justify-content: space-between; align-items: baseline; }
+.field-head output { font-size: 13px; line-height: 19px; font-variant-numeric: tabular-nums; }
+.feedback { font-size: 13px; line-height: 19px; color: var(--ink); flex: 1; }
+.nav { display: flex; align-items: center; gap: var(--space-2); }
+.grow { flex: 1; }
+
+.toast {
+  position: fixed; left: 50%; top: calc(var(--space-6) + env(safe-area-inset-top)); z-index: 10;
+  transform: translate(-50%, -8px); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+  padding: var(--space-2) var(--space-3); max-width: calc(100vw - 2 * var(--space-4)); text-align: center;
+  background: var(--surface-raised); color: var(--ink); border: 1.5px solid var(--ink); box-shadow: var(--shadow-block);
+  font-size: 13px; line-height: 19px;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (min-width: 900px) {
+  /* side by side on a wide screen: picture left, lesson right */
+  #study { flex-direction: row; }
+  #study .dock { width: 380px; border-top: 0; border-left: 1.5px solid var(--ink); align-content: start; padding-top: var(--space-6); gap: var(--space-3); }
+  .title { font-size: 28px; line-height: 32px; font-weight: 500; letter-spacing: -.04em; }
+  .body { font-size: 15px; line-height: 24px; }
+}
+@media (prefers-reduced-motion: reduce) { .tile, .toast { transition: none; } }

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Portrait Study</title>
+<meta name="description" content="Learn to see a portrait's light and shadow, one fundamental at a time, on your own reference photo.">
+<meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b1a18" media="(prefers-color-scheme: dark)">
+<script>try { var t = JSON.parse(localStorage.getItem("pc.theme")); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spline+Sans+Mono:ital,wght@0,300..700;1,300..700&display=swap">
+<link rel="stylesheet" href="../assets/graphite/tokens.css">
+<link rel="stylesheet" href="../assets/graphite/components.css">
+<link rel="stylesheet" href="assets/study.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="gr-rough" x="-8%" y="-30%" width="116%" height="160%"><feTurbulence type="fractalNoise" baseFrequency="0.05 0.12" numOctaves="2" seed="5" result="e"/><feDisplacementMap in="SourceGraphic" in2="e" scale="2.6" xChannelSelector="R" yChannelSelector="G"/></filter></defs></svg>
+
+<!-- Pick a reference -->
+<section class="screen" id="pick">
+  <main class="pick">
+    <p class="gr-counter accent">Portrait Study</p>
+    <h1 class="display">See the light first</h1>
+    <p class="lede">Choose a reference. You will learn to read its light and shadow, one fundamental at a time, before you draw a single detail.</p>
+    <button class="gr-btn gr-accent" id="pickBtn" type="button"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Choose photo</span></button>
+    <div class="group" id="recentWrap" hidden>
+      <p class="gr-counter">Recent</p>
+      <div class="tiles" id="recent"></div>
+    </div>
+    <div class="group">
+      <p class="gr-counter">Samples</p>
+      <div class="tiles" id="samples"></div>
+    </div>
+    <a class="gr-link" href="../">Trace with Portrait Coach</a>
+  </main>
+</section>
+
+<!-- One lesson at a time -->
+<section class="screen" id="study" hidden>
+  <main class="stage" id="stage">
+    <canvas id="view" aria-label="Your reference, with the lesson drawn over it"></canvas>
+    <div class="float float-left"><button class="gr-link" id="backBtn" type="button">New photo</button></div>
+    <div class="float float-right">
+      <div class="gr-tabs look-tabs" role="tablist" aria-label="What to show">
+        <button class="gr-tab" type="button" role="tab" data-look="photo" aria-selected="false"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Photo</span></button>
+        <button class="gr-tab" type="button" role="tab" data-look="study" aria-selected="true"><span class="gr-block"><span class="gr-hatch"></span></span><span class="gr-label">Study</span></button>
+      </div>
+    </div>
+    <div class="legend" id="legend" hidden></div>
+  </main>
+
+  <div class="dock">
+    <div class="lesson-head">
+      <span class="gr-counter accent" id="counter"></span>
+      <h2 class="title" id="title"></h2>
+    </div>
+    <p class="body" id="text"></p>
+    <p class="body draw" id="draw"></p>
+    <div class="control" id="control"></div>
+    <div class="nav">
+      <div class="gr-dots" id="dots"></div>
+      <span class="grow"></span>
+      <button class="gr-ibtn gr-soft" id="prev" type="button" aria-label="Previous lesson"><span class="gr-block"><span class="gr-hatch"></span></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+      <button class="gr-ibtn" id="next" type="button" aria-label="Next lesson"><span class="gr-block"><span class="gr-hatch"></span></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+    </div>
+  </div>
+</section>
+
+<input type="file" id="fileInput" accept="image/*" hidden>
+<div class="toast" id="toast" role="status"></div>
+<script src="assets/study.js"></script>
+</body>
+</html>
